@@ -14,7 +14,11 @@ public class CustomButton extends JButton {
 	public static final Font BUTTON_FONT = new Font("sans serif", 20, 20);
 	public int totalCount = 0;
 	public int useCount = 0;
- 
+
+	public static final int HTML_FILE_LOAD_BUTTON_TYPE = 100001;
+	public static final int START_LOAD_DATABASE_TYPE = 2001002;
+	public static final int REFRESH_GUI_TYPE = 3000003;
+	public static final int SAVE_SETTINGS_TYPE = 4001004;
  
 
 	public CustomButton(String name,boolean isRevisor) {
