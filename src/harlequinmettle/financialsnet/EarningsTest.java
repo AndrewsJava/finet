@@ -9,13 +9,15 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.TreeMap;
 
-import javax.swing.JCheckBox;
+import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 
@@ -23,25 +25,41 @@ import org.apache.commons.io.FileUtils;
 
 public class EarningsTest {
 	static ProgramSettings programSettings;
+	static Database db;
 	final String qTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download";
 	final String yTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nyse&render=download";
 	final Calendar calendar = Calendar.getInstance();
 	final TreeMap<String, String> rawMap = new TreeMap<String, String>();
-	final SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd");
+	final SimpleDateFormat dateFormatForFile= new SimpleDateFormat("yyyy_MM_dd");
+	final SimpleDateFormat dateFormatForUrl = new SimpleDateFormat("yyyyMMdd");
 	final ArrayList<File> rawHtmlData = new ArrayList<File>();
 	final String[] dow = { "DJI" };
-	final String root = "earningsReportsFiles" + File.separator;
+	static final String ROOT = "earningsReportsFiles" + File.separator;
 	final JFrame application = new JFrame("Financails Net");
 	final JTabbedPane gui = new JTabbedPane();
-	final JCheckBox nasdaq = JComponentFactory.doJCheckbox("NASDAQ");
-	final JCheckBox nyse = JComponentFactory.doJCheckbox("NYSE");
+//	final JCheckBox nasdaq = JComponentFactory.doJCheckbox("NASDAQ");
+//	final JCheckBox nyse = JComponentFactory.doJCheckbox("NYSE");
+	final JRadioButton yes = new JRadioButton("yes");
+	final JRadioButton no = new JRadioButton("no");
+	final ButtonGroup yesNo = new ButtonGroup();
 	// settings components:
 	final JLabel labelOutputFile = JComponentFactory
 			.doJLabel("root path to text database: ");
-	final JTextArea rootPathTextArea = JComponentFactory.doJTextArea();
+	static final JTextArea PATH_SOURCE = JComponentFactory.doJTextArea();
+	
 	final CustomButton buttonBrowseFiles = JComponentFactory
-			.doBrowseButton(rootPathTextArea);
-
+			.doBrowseButton(PATH_SOURCE);
+	   
+//	static final Comparator<CustomButton> BUTTON_TITLE_COMPARATOR = new Comparator<CustomButton>() {
+//	        @Override public int compare(CustomButton b1, CustomButton b2) {
+//	        	String s1 = b1.getText();
+//	        	String s2  = b2.getText();
+//	            return s1.substring(1, 2).compareTo(s2.substring(1, 2));
+//	        }           
+//	    }; 
+//	static final TreeMap<CustomButton,File> BUTTON_FILE_MAP = new TreeMap<CustomButton,File>(BUTTON_TITLE_COMPARATOR);
+	static final TreeMap<String,File> MAP_TO_FILES = new TreeMap<String,File>( );
+ 
 	//
 	// final JLabel labelStepsFile = JComponentFactory.doJLabel(
 	// "Path to calabash canned steps and custom steps : ", new Color(90, 190,
@@ -60,7 +78,6 @@ public class EarningsTest {
 
 	public EarningsTest() {
 		programSettings = MemoryManager.restoreSettings();
-		rootPathTextArea.setText(programSettings.rootPathToTextDatabase);
 		// JFrame
 		application.setVisible(true);
 		// application.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -74,42 +91,64 @@ public class EarningsTest {
 	}
 
 	private void setUpTabs() {
+		PATH_SOURCE.setText(programSettings.rootPathToTextDatabase);
 		gui.removeAll();
 		JScrollPanelledPane appTab = setUpControlsTab();
 		gui.add("controlls", appTab);
 
-		JScrollPanelledPane filesTab = JComponentFactory.doTab(root,
-				CustomButton.HTML_FILE_LOAD_BUTTON_TYPE);
+		JScrollPanelledPane filesTab = JComponentFactory.doHtmlTickerFilesTab();
 		gui.add("one", filesTab);
 	}
 
 	private JScrollPanelledPane setUpControlsTab() {
 
-		JScrollPanelledPane stepScroll = new JScrollPanelledPane();
+		final JScrollPanelledPane stepScroll = new JScrollPanelledPane();
 
-		final CustomButton buttonRefresh = JComponentFactory.makeButton(
-				"refresh", CustomButton.REFRESH_GUI_TYPE);
+		final CustomButton buttonRefresh = new CustomButton("refresh");
+		final CustomButton buttonSave = new CustomButton("save");
+		
 		buttonRefresh.addActionListener(makeRefreshButtonListener());
-		final CustomButton buttonSave = JComponentFactory.makeButton("save",
-				CustomButton.SAVE_SETTINGS_TYPE);
 		buttonSave.addActionListener(makeSaveButtonListener());
+
 		stepScroll.addComp(JComponentFactory.generatePanel(buttonRefresh,
 				buttonSave));
-		JPanel rootFileInfo = JComponentFactory
+
+		final CustomButton buttonGatherNextEarningsReports = new CustomButton("get next earnings set"); 
+		buttonGatherNextEarningsReports.addActionListener(makeGatherNextSetButtonListener()); 
+		stepScroll.addComp(JComponentFactory.generatePanel(buttonGatherNextEarningsReports));
+		
+		final JPanel rootFileInfo = JComponentFactory
 				.makePanel(JComponentFactory.HORIZONTAL);
 		rootFileInfo.add(labelOutputFile);
-		rootFileInfo.add(rootPathTextArea);
+		rootFileInfo.add(PATH_SOURCE);
 		rootFileInfo.add(buttonBrowseFiles);
 		stepScroll.addComp(rootFileInfo);
 
 		JPanel dbLoad = JComponentFactory
 				.makePanel(JComponentFactory.HORIZONTAL);
-		dbLoad.add(nasdaq);
-		dbLoad.add(nyse);
+//		dbLoad.add(nasdaq);
+//		dbLoad.add(nyse);
+		yesNo.add(yes);
+		yesNo.add(no);
+		dbLoad.add(yes);
+		dbLoad.add(no);
 		dbLoad.add(JComponentFactory.makeButton("Load Database",
-				CustomButton.START_LOAD_DATABASE_TYPE));
+				CustomButton.START_LOAD_DATABASE_TYPE,yes));
 		stepScroll.addComp(dbLoad);
 		return stepScroll;
+	}
+
+	private ActionListener makeGatherNextSetButtonListener() {
+
+		return new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+
+				storeUpcommingEarningsPages();
+
+			}
+
+		};
 	}
 
 	private ActionListener makeSaveButtonListener() {
@@ -118,7 +157,7 @@ public class EarningsTest {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				programSettings.rootPathToTextDatabase = rootPathTextArea
+				programSettings.rootPathToTextDatabase = PATH_SOURCE
 						.getText();
 
 				MemoryManager.saveSettings();
@@ -195,6 +234,7 @@ public class EarningsTest {
 		}
 	}
 
+
 	private void storeUpcommingEarningsPages() {
 
 		try {
@@ -202,13 +242,14 @@ public class EarningsTest {
 			calendar.setTime(new Date());
 
 			for (int i = 0; i < 14; i++) {
-				String date = sdf.format(calendar.getTime());
+				String date = dateFormatForUrl.format(calendar.getTime());
+				String dateFileFormat = dateFormatForFile.format(calendar.getTime());
 				String earnings = "http://biz.yahoo.com/research/earncal/"
 						+ date + ".html"; // /
 
 				try {
-					File htmlFile = new File(root + dayNumber() + "_URL_"
-							+ date + ".html");
+					File htmlFile = new File(ROOT + dayNumber() + "_URL_"
+							+ dateFileFormat + ".html");
 					FileUtils.copyURLToFile(new URL(earnings), htmlFile);
 					System.out.println(new SimpleDateFormat("EEE")
 							.format(calendar.getTime()) + "      " + earnings);
@@ -235,12 +276,12 @@ public class EarningsTest {
 
 			for (int i = 0; i < 14; i++) {
 				Date days = new Date(time + 1000 * 3600 * 24 * i);
-				String date = sdf.format(days);
+				String date = dateFormatForUrl.format(days);
 				String earnings = "http://biz.yahoo.com/research/earncal/"
 						+ date + ".html"; // /
 
 				try {
-					File htmlFile = new File(root + dayNumber() + "_URL_"
+					File htmlFile = new File(ROOT + dayNumber() + "_URL_"
 							+ date + ".html");
 					FileUtils.copyURLToFile(new URL(earnings), htmlFile);
 					System.out.println(new SimpleDateFormat("EEE").format(days)
@@ -293,9 +334,9 @@ public class EarningsTest {
 	private void saveCurrentTickers() {
 
 		try {
-			FileUtils.copyURLToFile(new URL(qTickerDownloadSite), new File(root
+			FileUtils.copyURLToFile(new URL(qTickerDownloadSite), new File(ROOT
 					+ fileTitle("NASDAq")));
-			FileUtils.copyURLToFile(new URL(yTickerDownloadSite), new File(root
+			FileUtils.copyURLToFile(new URL(yTickerDownloadSite), new File(ROOT
 					+ fileTitle("NySE")));
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block

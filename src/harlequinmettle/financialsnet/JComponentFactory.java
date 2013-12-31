@@ -9,7 +9,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map.Entry;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -18,12 +21,16 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
-public class JComponentFactory {
+import org.apache.commons.io.FileUtils;
+
+public class JComponentFactory  {
 
 	public static final int HORIZONTAL = 8000000;
 	public static final int VERTICAL = 1111111;
@@ -44,6 +51,14 @@ public class JComponentFactory {
 		return textScroll;
 	}
 
+	public static JScrollPane makeJScrollPane(JComponent jComp) {
+		JScrollPane scroller = new JScrollPane();  
+		scroller.setViewportView(jComp);
+		scroller.setPreferredSize(new Dimension(600, 300));
+		scroller.getVerticalScrollBar().setUnitIncrement(32);
+		return scroller;
+	}
+
 	public static JCheckBox doJCheckbox(String title) {
 
 		final JCheckBox a = new JCheckBox(title);
@@ -62,23 +77,17 @@ public class JComponentFactory {
 
 	}
 
-	public static JScrollPanelledPane doTab(String filePath,
-			final int BUTTON_TYPE) {
+	public static JScrollPanelledPane doHtmlTickerFilesTab(  ) {
 		JScrollPanelledPane stepScroll = new JScrollPanelledPane();
 
-		File dir = new File(filePath);
+		File dir = new File(EarningsTest.ROOT);
 		File[] files = dir.listFiles();
 		Arrays.sort(files);
 		for (int i = files.length - 1; i >= 0; i--) {
-			File f = files[i];
-			CustomButton eb = new CustomButton("button is undefined");
-			switch (BUTTON_TYPE) {
-			case CustomButton.HTML_FILE_LOAD_BUTTON_TYPE:
-				eb = JComponentFactory.makeButton(f.getName(), BUTTON_TYPE);
-				break;
-			default:
-				break;
-			}
+			File f = files[i];  
+				CustomButton eb = JComponentFactory.makeHtmlLoadButton(f.getName() );
+
+				EarningsTest.MAP_TO_FILES.put(f.getName(), f);
 
 			eb.setHorizontalAlignment(SwingConstants.LEFT);
 			stepScroll.addComp(eb);
@@ -114,16 +123,13 @@ public class JComponentFactory {
 		return p;
 	}
 
-	public static CustomButton makeButton(String buttonTitle, int BUTTON_TYPE) {
+	public static CustomButton makeButton(String buttonTitle, int BUTTON_TYPE, JComponent param) {
 		final CustomButton a = new CustomButton(buttonTitle);
 		switch (BUTTON_TYPE) {
-		case CustomButton.HTML_FILE_LOAD_BUTTON_TYPE:
-			a.addActionListener(JComponentFactory
-					.makeHtmlButtonListener(buttonTitle));
-			break;
+ 
 		case CustomButton.START_LOAD_DATABASE_TYPE:
 			a.addActionListener(JComponentFactory
-					.makeDBLoadButtonListener(buttonTitle));
+					.makeDBLoadButtonListener(buttonTitle,(JRadioButton)param));
 			break;
 		case CustomButton.REFRESH_GUI_TYPE:
 //			a.addActionListener(JComponentFactory
@@ -139,24 +145,75 @@ public class JComponentFactory {
 		return a;
 	}
 
-	private static ActionListener makeHtmlButtonListener(
-			final String buttonTitle) {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				JFrame jf = new JFrame(buttonTitle);
-				jf.setSize(300, 300);
-				jf.setVisible(true);
-				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			}
-		};
+	public static CustomButton makeHtmlLoadButton(final String buttonTitle ) {
+		final CustomButton a = new CustomButton(buttonTitle);
+ 
+			a.addActionListener(
+					new ActionListener() {
+						@Override
+						public void actionPerformed(ActionEvent arg0) {
+							JFrame jf = new JFrame(buttonTitle);
+							jf.setSize(900, 500);
+							jf.setVisible(true);
+							jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+							JTabbedPane compareTickers = new JTabbedPane();
+							jf.add(compareTickers);
+							ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES.get(a.getText()));
+ 
+							for(Entry<String,File> ent:EarningsTest.MAP_TO_FILES.entrySet() )
+							System.out.println(ent.getKey() +"  --->"+ent.getValue()); 
+							for(String s: tickers){
+								int tickerLocation = Database.dbSet.indexOf(s);
+								if(tickerLocation>0)
+								compareTickers.add(s,JComponentFactory.makeJScrollPane( new ProfileCanvas(tickerLocation)));
+							}
+						}
+					}
+			
+			
+			);
+		 
+ 
+		return a;
 	}
+ 
 
+	private static ArrayList<String> parseFileForTickers(File htmlFile) {
+	 ArrayList<String> tickers = new ArrayList<String>();
+			String[] getTickersFrom = { "   " };
+			try {
+				String fromFile = FileUtils.readFileToString(htmlFile);
+				getTickersFrom = fromFile.replaceAll("\\s+", "")
+						.split("q\\?s=");
+				System.out.println("\n" + htmlFile.getName() + "      --->"
+						+ getTickersFrom.length + "     :>");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			for (int i = 1; i < getTickersFrom.length; i++) {
+				String s = getTickersFrom[i];
+				try {
+					if (s.indexOf(">") > 0 && s.indexOf("<") > 0) {
+						String ticker = s.substring(s.indexOf(">") + 1,
+								s.indexOf("<"));
+						tickers.add(ticker);
+						System.out.print(ticker
+								+ "    ");
+					}
+				} catch (Exception e) {
+					// System.err.println("error: "+s);
+				} 
+		}
+			return tickers;
+	}
 	private static ActionListener makeDBLoadButtonListener(
-			final String buttonTitle) {
+			final String buttonTitle,final JRadioButton yes) {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				if(yes.isSelected())
 				startLoadingDataBase();
 				JFrame jf = new JFrame(buttonTitle);
 				jf.setSize(900, 100);
@@ -171,7 +228,7 @@ public class JComponentFactory {
 
 			@Override
 			public void run() {
-				Database db = new Database();
+			 EarningsTest.db = new Database(EarningsTest.PATH_SOURCE.getText());
 			}
 
 		});

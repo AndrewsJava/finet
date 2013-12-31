@@ -59,7 +59,7 @@ public class ProfileViewer implements ActionListener {
 			}
 			bundles.add(new JButton("" + bundle.size()));
 			for (int id : bundle) {
-				JButton tickerButton = new JButton(Database.dbSet[id] + " "
+				JButton tickerButton = new JButton(Database.dbSet.get(id) + " "
 						+ id);
 				tickerButton.addActionListener(this);
 

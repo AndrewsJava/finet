@@ -19,8 +19,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class Database implements Qi, Yi, DBLabels {
-	public static final String ROOT = "sm/q";
-	public static final String OBJ_ROOT = "sm/OBJECTS";
+	//public static final String ROOT = "sm/q";
+	//public static final String OBJ_ROOT = "sm/OBJECTS";
 	public static final TreeMap<Float, float[][]> DB_ARRAY = new TreeMap<Float, float[][]>();
 	public static final TreeMap<Float, float[][]> DB_SUP = new TreeMap<Float, float[][]>();
 	public static final TreeMap<Float, float[][][]> DB_PRICES = new TreeMap<Float, float[][][]>();
@@ -45,14 +45,15 @@ public class Database implements Qi, Yi, DBLabels {
 	public static final int LOAD_NASDAQ = 1500000;
 	public static final int LOAD_NYSE = 5555;
 	public static final int LOAD_BOTH = 22022;
-	public static String[] dbSet;
+	//public static String[] dbSet;
+	public static ArrayList<String> dbSet;
 	public static final TreeMap<String, String> DESCRIPTIONS = new TreeMap<String, String>();
 	public static int valid = 0;
 	public static int invalid = 0;
 	int totalNull = 0;
 	TreeSet<String> losses = new TreeSet<String>();
-	String[] files;
-	String[] files2;
+	String[] files_q;
+	String[] files_y;
 	long time;
 
 	int dataRead = 0;
@@ -67,8 +68,37 @@ public class Database implements Qi, Yi, DBLabels {
 	// CHECK IN OBJECTS FOLDER LOAD FIRST - THEN CHECK FOR NEW TEXT FILES
 	// CONVERT TO OBJECT (SAVE IN OBJ FOLDER) LOAD INTO DB
 	public Database() {
-		dbSet = concat(QQ, YY);
-		loadDatabaseWithData();
+		dbSet = new ArrayList<String>(Arrays.asList(concat(QQ, YY)));
+		loadDatabaseWithData("");
+		calculateChanges();
+		computeSuplementalFactors();
+		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
+			SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
+			String formated = sdf.format(new Date(
+					(long) (ent.getKey() * 24 * 3600 * 1000)));
+			System.out.println("week    : " + formated + "   --d> "
+					+ ((int) (1000 * ent.getValue()) / 1000.0));
+		}
+
+		System.out.println("VALID DATA: " + valid);
+		System.out.println("INVALID DT: " + invalid);
+		System.out.println("total Null: " + totalNull);
+		System.out.println("actual Nll: " + losses.size() + " -->" + losses);
+
+		System.out.println("data was readable " + dataRead);
+		System.out.println("data NOT readable " + dataNotRead);
+
+		for (Entry<Float, Integer> ent : VALID_COUNT.entrySet()) {
+
+			System.out.println("week    : " + ent.getKey()
+					+ "   --valid price data-> " + ent.getValue());
+		}
+
+	}
+	public Database(String root) {
+		SystemMemoryUsage smu = new SystemMemoryUsage();
+		dbSet = new ArrayList<String>(Arrays.asList(concat(QQ, YY)));
+		loadDatabaseWithData(root);
 		calculateChanges();
 		computeSuplementalFactors();
 		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
@@ -146,9 +176,9 @@ public class Database implements Qi, Yi, DBLabels {
 
 	private void calculateAllChangesForInterval(float startDate,
 			float[] startPrices, float[] endPrices) {
-		float[] changes = new float[dbSet.length];
+		float[] changes = new float[dbSet.size()];
 		int errors = 0;
-		for (int i = 0; i < dbSet.length; i++) {
+		for (int i = 0; i < dbSet.size(); i++) {
 			if (endPrices[i] != endPrices[i]
 					|| startPrices[i] != startPrices[i])
 				errors++;
@@ -179,22 +209,25 @@ public class Database implements Qi, Yi, DBLabels {
 		return sum / valid;
 	}
 
-	private void loadDatabaseWithData() {
+	private void loadDatabaseWithData(String root) {
 		time = System.currentTimeMillis();
 		// try to load from obj else {
-		files = new File(ROOT).list();
-		Arrays.sort(files);
-		files2 = new File("sm/y").list();
-		Arrays.sort(files2);
-		System.out.println("loading database: " + files.length
+		root+=File.separator+"sm"+File.separator;
+		System.out
+		.println("---*****************************--->>>>>>>"+root);
+		files_q = new File(root+"q").list();
+		Arrays.sort(files_q);
+		files_y = new File(root+"y").list();
+		Arrays.sort(files_y);
+		System.out.println("loading database: " + files_q.length
 				+ " files to load");
 		// for each file store last price for each ticker
 
-		for (int i = 0; i < files.length; i++) {
+		for (int i = 0; i < files_q.length; i++) {
 			System.out
-					.println("loading files " + files[i] + "    " + files2[i]);
+					.println("loading files " + files_q[i] + "    " + files_y[i]);
 
-			convertFileDataToArray(i);
+			convertFileDataToArray(i, root);
 
 		}
 
@@ -203,24 +236,24 @@ public class Database implements Qi, Yi, DBLabels {
 	}
 
 	// for each file i convert stored data to numeric data
-	private void convertFileDataToArray(int i) {
+	private void convertFileDataToArray(int i,String root) {
 		// for each time stage file construct array 85 fundamental data
 		// points for each symbol
-		float[][] data = new float[dbSet.length][];
+		float[][] data = new float[dbSet.size()][];
 		// for each time stage file construct array 7 technical data points
 		// for each symbol
-		float[][][] pdata = new float[dbSet.length][][];
-		float[] weeksPrices = new float[dbSet.length];
+		float[][][] pdata = new float[dbSet.size()][][];
+		float[] weeksPrices = new float[dbSet.size()];
 		TreeMap<String, String> textData = new TreeMap<String, String>();
-		Float days = Float.parseFloat(files[i].replaceAll("\\.txt", "").split(
+		Float days = Float.parseFloat(files_q[i].replaceAll("\\.txt", "").split(
 				"_")[1]);
-		if (!checkForObjectRestore(i, days)) {
-			DataUtil.loadStringData("sm/q/" + files[i], textData);
-			DataUtil.loadStringData("sm/y/" + files2[i], textData);
+		if (!checkForObjectRestore(i, days,root)) {
+			DataUtil.loadStringData(root+"q"+File.separator + files_q[i], textData);
+			DataUtil.loadStringData(root+"y"+File.separator + files_y[i], textData);
 			int nullcount = 0;
 			// ASSUMES A 1 TO 1 EXISTENCE OF NAS AND NY FILES - TRUE SO FAR
-			for (int j = 0; j < dbSet.length; j++) {
-				String ticker = dbSet[j];
+			for (int j = 0; j < dbSet.size(); j++) {
+				String ticker = dbSet.get(j);
 				String textdata = textData.get(ticker);
 
 				if (textdata == null) {
@@ -278,13 +311,13 @@ public class Database implements Qi, Yi, DBLabels {
 			// VALID_COUNT.put(days, valid(weeksPrices));
 
 			// float[][] data = new float[dbSet.length][];
-			DataUtil.memorizeObject(data, OBJ_ROOT + "/DATA_" + days);
+			DataUtil.memorizeObject(data, root+File.separator+"OBJECTS"+File.separator  + "DATA_" + days);
 			// float[][][] pdata = new float[dbSet.length][10][7];
-			DataUtil.memorizeObject(pdata, OBJ_ROOT + "/TECHNICAL_" + days);
+			DataUtil.memorizeObject(pdata, root+File.separator+"OBJECTS"+File.separator  + "TECHNICAL_" + days);
 			// float[] weeksPrices = new float[dbSet.length];
-			DataUtil.memorizeObject(weeksPrices, OBJ_ROOT + "/PRICES_" + days);
+			DataUtil.memorizeObject(weeksPrices, root+File.separator+"OBJECTS"+File.separator  + "PRICES_" + days);
 			// float marketSum = sum(weeksPrices);
-			DataUtil.memorizeObject(marketSum, OBJ_ROOT + "/SUM_" + days);
+			DataUtil.memorizeObject(marketSum, root+File.separator+"OBJECTS"+File.separator  + "SUM_" + days);
 
 		}
 		Thread.yield();
@@ -299,22 +332,23 @@ public class Database implements Qi, Yi, DBLabels {
 		return v;
 	}
 
-	private boolean checkForObjectRestore(int i, float days) {
+	private boolean checkForObjectRestore(int i, float days, String root) {
 
 		// float[][] data = new float[dbSet.length][];
-		float[][] data = DataUtil.restore2D(OBJ_ROOT + "/DATA_" + days);
+	 
+		float[][] data = DataUtil.restore2D(root+File.separator+"OBJECTS"+File.separator + "DATA_" + days);
 		if (data == null)
 			return false;
 		// float[][][] pdata = new float[dbSet.length][10][7];
-		float[][][] pdata = DataUtil.restore3D(OBJ_ROOT + "/TECHNICAL_" + days);
+		float[][][] pdata = DataUtil.restore3D(root+File.separator+"OBJECTS"+File.separator + "TECHNICAL_" + days);
 		if (pdata == null)
 			return false;
 		// float[] weeksPrices = new float[dbSet.length];
-		float[] weeksPrices = DataUtil.restore1D(OBJ_ROOT + "/PRICES_" + days);
+		float[] weeksPrices = DataUtil.restore1D(root+File.separator+"OBJECTS"+File.separator +  "PRICES_" + days);
 		if (weeksPrices == null)
 			return false;
 		// float marketSum = sum(weeksPrices);
-		Float marketSum = DataUtil.restoreFloat(OBJ_ROOT + "/SUM_" + days);
+		Float marketSum = DataUtil.restoreFloat(root+File.separator+"OBJECTS"+File.separator  + "SUM_" + days);
 		if (marketSum == null)
 			return false;
 
