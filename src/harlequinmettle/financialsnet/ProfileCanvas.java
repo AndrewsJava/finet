@@ -72,7 +72,7 @@ public class ProfileCanvas extends JPanel {
 		}
 
 		int offset = 0;
-		for (StatInfo stat : DataControlls.statistics) {
+		for (StatInfo stat : Database.statistics) {
 			// compare these companies values to statistics
 			Rectangle2D.Float[] histog = setUpBars(stat.histogram, offset);
 			histos.add(histog);

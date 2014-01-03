@@ -5,6 +5,7 @@ import harlequinmettle.financialsnet.interfaces.DBLabels;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -110,7 +111,8 @@ public class ProfileViewer implements ActionListener {
 		// JScrollPane scrollPanel = new JScrollPane();
 		// scrollPanel.setPreferredSize();
 
-		jta.setFont(DataControlls.mFont);
+	  Font mFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
+		jta.setFont( mFont);
 		jta.setLineWrap(true);
 		// textScroll.add(jta);
 		textScroll.setViewportView(jta);

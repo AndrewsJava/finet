@@ -18,9 +18,14 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import javax.swing.JTextField;
+
 public class Database implements Qi, Yi, DBLabels {
 	//public static final String ROOT = "sm/q";
 	//public static final String OBJ_ROOT = "sm/OBJECTS";
+	public static final int FIELD_COUNT = DBLabels.labels.length;
+	public static final JTextField[] LOWS = new JTextField[FIELD_COUNT];
+	public static final JTextField[] HIGHS = new JTextField[FIELD_COUNT];
 	public static final TreeMap<Float, float[][]> DB_ARRAY = new TreeMap<Float, float[][]>();
 	public static final TreeMap<Float, float[][]> DB_SUP = new TreeMap<Float, float[][]>();
 	public static final TreeMap<Float, float[][][]> DB_PRICES = new TreeMap<Float, float[][][]>();
@@ -37,7 +42,8 @@ public class Database implements Qi, Yi, DBLabels {
 	public static final TreeMap<Float, ArrayList<Integer>> BUNDLES = new TreeMap<Float, ArrayList<Integer>>();
 	public static final TreeMap<Float, Float> BUNDLES_CHANGES = new TreeMap<Float, Float>();
 	public static final TreeMap<Float, Integer> BUNDLES_SIZES = new TreeMap<Float, Integer>();
-	
+
+	public static ArrayList<StatInfo> statistics = new ArrayList<StatInfo>();
 	
 	public static final TreeMap<Float, Integer> VALID_COUNT = new TreeMap<Float, Integer>();
 
@@ -122,7 +128,23 @@ public class Database implements Qi, Yi, DBLabels {
 			System.out.println("week    : " + ent.getKey()
 					+ "   --valid price data-> " + ent.getValue());
 		}
+calculateStatistics();
+	}
 
+	private void calculateStatistics() {
+		for (int i = 0; i < FIELD_COUNT; i++) {
+			statistics.add(generateStatistics(i)); 
+		}
+	}
+	public StatInfo generateStatistics(int id) {
+		ArrayList<Float> stats = new ArrayList<Float>();
+		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
+			float[][] dats = ent.getValue();
+			for (float[] d : dats) {
+				stats.add(d[id]);
+			}
+		}
+		return new StatInfo(stats, id, StatInfo.DONT_SHOW);
 	}
 
 	public void computeSuplementalFactors() {
@@ -507,7 +529,7 @@ public class Database implements Qi, Yi, DBLabels {
 					// if data is invalid , or outside the limits exclude i
 					// for each id restriction limit bundle to valid data (not
 					// nan) and withing range
-					if (DataControlls.INVERT[id].isSelected()) {
+					if (false ){ //DataControlls.INVERT[id].isSelected()) {
 						if (data[i][id] != data[i][id]
 								|| (data[i][id] > lowlimit && data[i][id] < highlimit)) {
 							isIn = false;

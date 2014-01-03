@@ -246,12 +246,63 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 	}
 
 	public void showIt() {
-		subsetStats = DataControlls.generateBundleStatistics(ID, emin, emax);
-		DataControlls.setMarketComparisonStatistics(this, ID, emin, emax);
+		subsetStats =  generateBundleStatistics(ID, emin, emax);
+		 setMarketComparisonStatistics(this, ID, emin, emax);
 
 		setUpComparisonBars();
 		setVisible(true);
 		this.repaint();
+	}
+	public static void setMarketComparisonStatistics(StatInfo setTo, int iD,
+			float emin, float emax) {
+
+		ArrayList<Float> over = new ArrayList<Float>();
+		ArrayList<Float> under = new ArrayList<Float>();
+
+		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
+			// change in market forward 1wk
+			if (!Database.MARKETCHANGE.containsKey(ent.getKey()))
+				continue;
+			float marketChange = Database.MARKETCHANGE.get(ent.getKey());
+
+			System.out.println("MARKET WAS " + marketChange);
+			float[][] dats = ent.getValue();
+			float[] individualsChanges = Database.UNFORESEEN.get(ent.getKey());
+			if (individualsChanges != null)
+				for (int i = 0; i < dats.length; i++) {
+					if (individualsChanges[i] != individualsChanges[i])
+						continue;
+					if (individualsChanges[i] > marketChange)
+						over.add(dats[i][iD]);
+					else if (individualsChanges[i] < marketChange)
+						under.add(dats[i][iD]);
+				}
+		}
+		System.out.println("sizes:  -------->" + over.size() + "   "
+				+ under.size());
+		// overs - left = false -> right
+		setTo.beatMarket = new StatInfo(over, iD, StatInfo.DONT_SHOW, emin,
+				emax, false);
+
+		// unders- left = true
+		setTo.marketBeat = new StatInfo(under, iD, StatInfo.DONT_SHOW, emin,
+				emax, true);
+	}
+
+	public static StatInfo generateBundleStatistics(int id, float emn, float emx) {
+
+		ArrayList<Float> stats = new ArrayList<Float>();
+		if (Database.BUNDLES.size() < Database.DB_ARRAY.size())
+			return new StatInfo(stats, id, StatInfo.DONT_SHOW);
+		// TreeMap<Float, ArrayList<Integer>> BUNDLES
+
+		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
+			float[][] dats = ent.getValue();
+			for (int bun : Database.BUNDLES.get(ent.getKey())) {
+				stats.add(dats[bun][id]);
+			}
+		}
+		return new StatInfo(stats, id, StatInfo.DONT_SHOW, emn, emx);
 	}
 
 	public void reVisualize() {
@@ -691,12 +742,12 @@ public int locationInHistogram(float f){
 			g.draw(gp);
 		}
 		g.setColor(shade);
-		if (DataControlls.INVERT[ID].isSelected()) {
-			g.fill(shadedArea1); 
-			g.fill(shadedArea2); 
-		} else {
-			g.fill(shadedArea1);
-		}
+//		if (DataControlls.INVERT[ID].isSelected()) {
+//			g.fill(shadedArea1); 
+//			g.fill(shadedArea2); 
+//		} else {
+//			g.fill(shadedArea1);
+//		}
 		// upper and lower limit adjustors
 		g.setColor(limLine);
 		g.drawLine((int) nLim, 0, (int) nLim, (int) frameH);
@@ -801,38 +852,38 @@ public int locationInHistogram(float f){
 
 	@Override
 	public void mouseReleased(MouseEvent arg0) {
-		final float x = arg0.getX();
-
-		if ((x < xLim + drag_proximity && x > xLim - drag_proximity) || setXlim) {
-			xLim = x;
-			gmaxVert = arg0.getY();
-			gmax = determineLimit(x);
-			DataControlls.HIGHS[ID].setText("" + gmax);
-			updateShadedArea();
-		} else if ((x < nLim + drag_proximity && x > nLim - drag_proximity)
-				|| setNlim) {
-			nLim = x;
-			gminVert = arg0.getY();
-			gmin = determineLimit(x);
-			DataControlls.LOWS[ID].setText("" + gmin);
-			updateShadedArea();
-		}
-		subsetStats = DataControlls.generateBundleStatistics(ID, emin, emax);
-		DataControlls.applyLimtsToDatabase();
-		repaint();
+//		final float x = arg0.getX();
+//
+//		if ((x < xLim + drag_proximity && x > xLim - drag_proximity) || setXlim) {
+//			xLim = x;
+//			gmaxVert = arg0.getY();
+//			gmax = determineLimit(x);
+//			DataControlls.HIGHS[ID].setText("" + gmax);
+//			updateShadedArea();
+//		} else if ((x < nLim + drag_proximity && x > nLim - drag_proximity)
+//				|| setNlim) {
+//			nLim = x;
+//			gminVert = arg0.getY();
+//			gmin = determineLimit(x);
+//			DataControlls.LOWS[ID].setText("" + gmin);
+//			updateShadedArea();
+//		}
+//		subsetStats = DataControlls.generateBundleStatistics(ID, emin, emax);
+//		DataControlls.applyLimtsToDatabase();
+//		repaint();
 	}
 
 	private void updateShadedArea() {
-		if (DataControlls.INVERT[ID].isSelected()) {
-			// add central rect
-			shadedArea1.width = nLim;
-			shadedArea2.x = xLim;
-			shadedArea2.width = 5555;
-		} else {
-			shadedArea1.x = nLim;
-			shadedArea1.width = xLim - nLim;
-
-		}
+//		if (DataControlls.INVERT[ID].isSelected()) {
+//			// add central rect
+//			shadedArea1.width = nLim;
+//			shadedArea2.x = xLim;
+//			shadedArea2.width = 5555;
+//		} else {
+//			shadedArea1.x = nLim;
+//			shadedArea1.width = xLim - nLim;
+//
+//		}
 	}
 
 	// /////////////////////////////////////
