@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -22,6 +23,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.comparator.NameFileComparator;
 
 public class EarningsTest {
 	static ProgramSettings programSettings;
@@ -30,53 +32,46 @@ public class EarningsTest {
 	final String yTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nyse&render=download";
 	final Calendar calendar = Calendar.getInstance();
 	final TreeMap<String, String> rawMap = new TreeMap<String, String>();
-	final SimpleDateFormat dateFormatForFile= new SimpleDateFormat("yyyy_MM_dd");
+	final SimpleDateFormat dateFormatForFile = new SimpleDateFormat(
+			"yyyy_MM_dd");
 	final SimpleDateFormat dateFormatForUrl = new SimpleDateFormat("yyyyMMdd");
 	final ArrayList<File> rawHtmlData = new ArrayList<File>();
 	final String[] dow = { "DJI" };
 	static final String ROOT = "earningsReportsFiles" + File.separator;
 	final JFrame application = new JFrame("Financails Net");
 	final JTabbedPane gui = new JTabbedPane();
-//	final JCheckBox nasdaq = JComponentFactory.doJCheckbox("NASDAQ");
-//	final JCheckBox nyse = JComponentFactory.doJCheckbox("NYSE");
-	final JRadioButton yes = new JRadioButton("yes");
-	final JRadioButton no = new JRadioButton("no");
-	final ButtonGroup yesNo = new ButtonGroup();
+	// final JCheckBox nasdaq = JComponentFactory.doJCheckbox("NASDAQ");
+	// final JCheckBox nyse = JComponentFactory.doJCheckbox("NYSE");
+	final JRadioButton confirmLoad = new JRadioButton("yes");
 	// settings components:
 	final JLabel labelOutputFile = JComponentFactory
 			.doJLabel("root path to text database: ");
 	static final JTextArea PATH_SOURCE = JComponentFactory.doJTextArea();
-	
+
 	final CustomButton buttonBrowseFiles = JComponentFactory
-			.doBrowseButton(PATH_SOURCE);
-	   
-//	static final Comparator<CustomButton> BUTTON_TITLE_COMPARATOR = new Comparator<CustomButton>() {
-//	        @Override public int compare(CustomButton b1, CustomButton b2) {
-//	        	String s1 = b1.getText();
-//	        	String s2  = b2.getText();
-//	            return s1.substring(1, 2).compareTo(s2.substring(1, 2));
-//	        }           
-//	    }; 
-//	static final TreeMap<CustomButton,File> BUTTON_FILE_MAP = new TreeMap<CustomButton,File>(BUTTON_TITLE_COMPARATOR);
-	static final TreeMap<String,File> MAP_TO_FILES = new TreeMap<String,File>( );
- 
-	//
-	// final JLabel labelStepsFile = JComponentFactory.doJLabel(
-	// "Path to calabash canned steps and custom steps : ", new Color(90, 190,
-	// 210));
-	// final JTextArea textStepsPath = JComonentFactory.doJTextArea(
-	// new Color(140, 195, 190));
-	// final CustomButton buttonBrowseStepsFiles = Maker
-	// .makeFilePathButton(textStepsPath, Maker.STEPS_PATH);
+			.doPathBrowseButton(PATH_SOURCE);
+
+	// ///panel for dowloads location (move from)
+	final JLabel labelDownloadsLocation = JComponentFactory
+			.doJLabel("root path downloads: ");
+	static final JTextArea PATH_DOWNLOADS = JComponentFactory.doJTextArea();
+
+	final CustomButton buttonBrowseDownloadsFiles = JComponentFactory
+			.doPathBrowseButton(PATH_DOWNLOADS);
+
+	static final TreeMap<String, File> MAP_TO_FILES = new TreeMap<String, File>();
+	
+	static EarningsTest singleton;
 
 	public static void main(String[] args) throws Exception {
 		EarningsTest et = new EarningsTest();
-		// et.saveCurrentTickers();
-		// storeUpcommingEarningsPages();
-		// parseSavedPagesForTickers();
 	}
 
 	public EarningsTest() {
+		// TODO: use/display company descriptions
+		// TODO: add dates to price/volume graph
+		// TODO: merge idential files / double gae output
+		singleton = this;
 		programSettings = MemoryManager.restoreSettings();
 		// JFrame
 		application.setVisible(true);
@@ -92,31 +87,104 @@ public class EarningsTest {
 
 	private void setUpTabs() {
 		PATH_SOURCE.setText(programSettings.rootPathToTextDatabase);
+		PATH_DOWNLOADS.setText(programSettings.rootPathToDownloads);
 		gui.removeAll();
 		JScrollPanelledPane appTab = setUpControlsTab();
 		gui.add("controlls", appTab);
 
-		JScrollPanelledPane filesTab = JComponentFactory.doHtmlTickerFilesTab();
-		gui.add("one", filesTab);
 	}
 
 	private JScrollPanelledPane setUpControlsTab() {
 
 		final JScrollPanelledPane stepScroll = new JScrollPanelledPane();
+		addBasicControlls(stepScroll);
+		addDatabaseLocator(stepScroll);
+		addDownloadsLocator(stepScroll);
+		addDatabaseLoadPanel(stepScroll);
+		return stepScroll;
+	}
+
+	private void addBasicControlls(JScrollPanelledPane stepScroll) {
 
 		final CustomButton buttonRefresh = new CustomButton("refresh");
 		final CustomButton buttonSave = new CustomButton("save");
-		
+		final CustomButton buttonMoveFiles = new CustomButton("move files");
+
 		buttonRefresh.addActionListener(makeRefreshButtonListener());
 		buttonSave.addActionListener(makeSaveButtonListener());
+		buttonMoveFiles.addActionListener(makeMoveFilesButtonListener());
 
 		stepScroll.addComp(JComponentFactory.generatePanel(buttonRefresh,
-				buttonSave));
+				buttonSave, buttonMoveFiles));
 
-		final CustomButton buttonGatherNextEarningsReports = new CustomButton("get next earnings set"); 
-		buttonGatherNextEarningsReports.addActionListener(makeGatherNextSetButtonListener()); 
-		stepScroll.addComp(JComponentFactory.generatePanel(buttonGatherNextEarningsReports));
-		
+		final CustomButton buttonGatherNextEarningsReports = new CustomButton(
+				"get next earnings set");
+		buttonGatherNextEarningsReports
+				.addActionListener(makeGatherNextSetButtonListener());
+		stepScroll.addComp(JComponentFactory
+				.generatePanel(buttonGatherNextEarningsReports));
+	}
+
+	private ActionListener makeMoveFilesButtonListener() {
+
+		return new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				JFrame fileMover = new JFrame("Move Files");
+				fileMover.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				fileMover.setSize(500, 750);
+				fileMover.setVisible(true);
+
+				final JScrollPanelledPane fileListScroller = new JScrollPanelledPane();
+				fileMover.add(fileListScroller);
+
+				programSettings.rootPathToTextDatabase = PATH_SOURCE.getText();
+
+				File[] downloads = new File(PATH_DOWNLOADS.getText())
+						.listFiles();
+				Arrays.sort(downloads, NameFileComparator.NAME_COMPARATOR);
+				for (File dls : downloads) {
+					if (dls.getName().contains("BIG_n")
+							|| dls.getName().contains("nas_")
+							|| dls.getName().contains("ny_")) {
+						double memory = ((int) (dls.length() / 1000)) / 1000.0;
+						fileListScroller.addComp(JComponentFactory.doJLabel(dls
+								.getName() + "   " + memory + " MB"));
+						// fileListScroller.addComp(JComponentFactory
+						// .doFileMoveButton(dls));
+					}
+				}
+				fileListScroller.addComp(JComponentFactory
+						.doConfirmMoveAllFiles());
+				MemoryManager.saveSettings();
+
+			}
+
+		};
+	}
+
+	private void addDatabaseLoadPanel(JScrollPanelledPane stepScroll) {
+
+		JPanel dbLoad = JComponentFactory
+				.makePanel(JComponentFactory.HORIZONTAL);
+
+		dbLoad.add(confirmLoad);
+		dbLoad.add(JComponentFactory.makeLoadDatabaseButton("Load Database",
+				confirmLoad));
+		stepScroll.addComp(dbLoad);
+	}
+
+	private void addDownloadsLocator(JScrollPanelledPane stepScroll) {
+		final JPanel rootFileInfo = JComponentFactory
+				.makePanel(JComponentFactory.HORIZONTAL);
+		rootFileInfo.add(labelDownloadsLocation);
+		rootFileInfo.add(PATH_DOWNLOADS);
+		rootFileInfo.add(buttonBrowseDownloadsFiles);
+		stepScroll.addComp(rootFileInfo);
+	}
+
+	private void addDatabaseLocator(JScrollPanelledPane stepScroll) {
+
 		final JPanel rootFileInfo = JComponentFactory
 				.makePanel(JComponentFactory.HORIZONTAL);
 		rootFileInfo.add(labelOutputFile);
@@ -124,18 +192,6 @@ public class EarningsTest {
 		rootFileInfo.add(buttonBrowseFiles);
 		stepScroll.addComp(rootFileInfo);
 
-		JPanel dbLoad = JComponentFactory
-				.makePanel(JComponentFactory.HORIZONTAL);
-//		dbLoad.add(nasdaq);
-//		dbLoad.add(nyse);
-		yesNo.add(yes);
-		yesNo.add(no);
-		dbLoad.add(yes);
-		dbLoad.add(no);
-		dbLoad.add(JComponentFactory.makeButton("Load Database",
-				CustomButton.START_LOAD_DATABASE_TYPE,yes));
-		stepScroll.addComp(dbLoad);
-		return stepScroll;
 	}
 
 	private ActionListener makeGatherNextSetButtonListener() {
@@ -157,8 +213,9 @@ public class EarningsTest {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				programSettings.rootPathToTextDatabase = PATH_SOURCE
-						.getText();
+				programSettings.rootPathToTextDatabase = PATH_SOURCE.getText();
+
+				programSettings.rootPathToDownloads = PATH_DOWNLOADS.getText();
 
 				MemoryManager.saveSettings();
 
@@ -234,7 +291,6 @@ public class EarningsTest {
 		}
 	}
 
-
 	private void storeUpcommingEarningsPages() {
 
 		try {
@@ -243,7 +299,8 @@ public class EarningsTest {
 
 			for (int i = 0; i < 14; i++) {
 				String date = dateFormatForUrl.format(calendar.getTime());
-				String dateFileFormat = dateFormatForFile.format(calendar.getTime());
+				String dateFileFormat = dateFormatForFile.format(calendar
+						.getTime());
 				String earnings = "http://biz.yahoo.com/research/earncal/"
 						+ date + ".html"; // /
 

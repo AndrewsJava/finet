@@ -29,8 +29,9 @@ import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.comparator.NameFileComparator;
 
-public class JComponentFactory  {
+public class JComponentFactory {
 
 	public static final int HORIZONTAL = 8000000;
 	public static final int VERTICAL = 1111111;
@@ -39,7 +40,8 @@ public class JComponentFactory  {
 	public static final Border BLACKBORDER = BorderFactory
 			.createLineBorder(Color.black);
 	public static final Border CUSTOMBORDER = BorderFactory
-	.createLineBorder(new Color(100,220,245));
+			.createLineBorder(new Color(100, 220, 245));
+
 	public static JScrollPane makeTextScroll(JTextArea jta) {
 		JScrollPane textScroll = new JScrollPane();
 		Font mFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
@@ -52,7 +54,7 @@ public class JComponentFactory  {
 	}
 
 	public static JScrollPane makeJScrollPane(JComponent jComp) {
-		JScrollPane scroller = new JScrollPane();  
+		JScrollPane scroller = new JScrollPane();
 		scroller.setViewportView(jComp);
 		scroller.setPreferredSize(new Dimension(600, 300));
 		scroller.getVerticalScrollBar().setUnitIncrement(32);
@@ -77,17 +79,17 @@ public class JComponentFactory  {
 
 	}
 
-	public static JScrollPanelledPane doHtmlTickerFilesTab(  ) {
+	public static JScrollPanelledPane doHtmlTickerFilesTab() {
 		JScrollPanelledPane stepScroll = new JScrollPanelledPane();
 
 		File dir = new File(EarningsTest.ROOT);
 		File[] files = dir.listFiles();
 		Arrays.sort(files);
 		for (int i = files.length - 1; i >= 0; i--) {
-			File f = files[i];  
-				CustomButton eb = JComponentFactory.makeHtmlLoadButton(f.getName() );
+			File f = files[i];
+			CustomButton eb = JComponentFactory.makeHtmlLoadButton(f.getName());
 
-				EarningsTest.MAP_TO_FILES.put(f.getName(), f);
+			EarningsTest.MAP_TO_FILES.put(f.getName(), f);
 
 			eb.setHorizontalAlignment(SwingConstants.LEFT);
 			stepScroll.addComp(eb);
@@ -98,9 +100,10 @@ public class JComponentFactory  {
 	}
 
 	public static JPanel generatePanel(JComponent... comps) {
-		JPanel shell = JComponentFactory.makePanel(JComponentFactory.HORIZONTAL);
-		//if (!Cuker.programSettings.useSystemLookAndFeel)
-			shell.setBorder(BLACKBORDER);
+		JPanel shell = JComponentFactory
+				.makePanel(JComponentFactory.HORIZONTAL);
+		// if (!Cuker.programSettings.useSystemLookAndFeel)
+		shell.setBorder(BLACKBORDER);
 		for (JComponent a : comps)
 			shell.add(a);
 
@@ -123,102 +126,91 @@ public class JComponentFactory  {
 		return p;
 	}
 
-	public static CustomButton makeButton(String buttonTitle, int BUTTON_TYPE, JComponent param) {
+	public static CustomButton makeLoadDatabaseButton(String buttonTitle,
+			JComponent param) {
 		final CustomButton a = new CustomButton(buttonTitle);
-		switch (BUTTON_TYPE) {
- 
-		case CustomButton.START_LOAD_DATABASE_TYPE:
-			a.addActionListener(JComponentFactory
-					.makeDBLoadButtonListener(buttonTitle,(JRadioButton)param));
-			break;
-		case CustomButton.REFRESH_GUI_TYPE:
-//			a.addActionListener(JComponentFactory
-//					.makeRefreshButtonListener( ));
-			break;
-		case CustomButton.SAVE_SETTINGS_TYPE:
-//			a.addActionListener(JComponentFactory
-//					.makeSaveButtonListener( ));
-			break;
-		default:
-			break;
-		}
+
+		a.addActionListener(JComponentFactory.makeDBLoadButtonListener(
+				buttonTitle, (JRadioButton) param));
+
 		return a;
 	}
 
-	public static CustomButton makeHtmlLoadButton(final String buttonTitle ) {
+	public static CustomButton makeHtmlLoadButton(final String buttonTitle) {
 		final CustomButton a = new CustomButton(buttonTitle);
- 
-			a.addActionListener(
-					new ActionListener() {
-						@Override
-						public void actionPerformed(ActionEvent arg0) {
-							JFrame jf = new JFrame(buttonTitle);
-							jf.setSize(900, 500);
-							jf.setVisible(true);
-							jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-							JTabbedPane compareTickers = new JTabbedPane();
-							jf.add(compareTickers);
-							ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES.get(a.getText()));
- 
-							for(Entry<String,File> ent:EarningsTest.MAP_TO_FILES.entrySet() )
-							System.out.println(ent.getKey() +"  --->"+ent.getValue()); 
-							for(String s: tickers){
-								int tickerLocation = Database.dbSet.indexOf(s);
-								if(tickerLocation>0)
-								compareTickers.add(s,JComponentFactory.makeJScrollPane( new ProfileCanvas(tickerLocation)));
-							}
-						}
-					}
-			
-			
-			);
-		 
- 
+
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(!Database.loaded)return;
+				JFrame jf = new JFrame(buttonTitle);
+				jf.setSize(900, 500);
+				jf.setVisible(true);
+				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				JTabbedPane compareTickers = new JTabbedPane();
+				jf.add(compareTickers);
+				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
+						.get(a.getText()));
+
+				for (Entry<String, File> ent : EarningsTest.MAP_TO_FILES
+						.entrySet())
+					System.out.println(ent.getKey() + "  --->" + ent.getValue());
+				for (String s : tickers) {
+					int tickerLocation = Database.dbSet.indexOf(s);
+					if (tickerLocation > 0)
+						compareTickers.add(s, JComponentFactory
+								.makeJScrollPane(new ProfileCanvas(
+										tickerLocation)));
+				}
+			}
+		}
+
+		);
+
 		return a;
 	}
- 
 
 	private static ArrayList<String> parseFileForTickers(File htmlFile) {
-	 ArrayList<String> tickers = new ArrayList<String>();
-			String[] getTickersFrom = { "   " };
-			try {
-				String fromFile = FileUtils.readFileToString(htmlFile);
-				getTickersFrom = fromFile.replaceAll("\\s+", "")
-						.split("q\\?s=");
-				System.out.println("\n" + htmlFile.getName() + "      --->"
-						+ getTickersFrom.length + "     :>");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			for (int i = 1; i < getTickersFrom.length; i++) {
-				String s = getTickersFrom[i];
-				try {
-					if (s.indexOf(">") > 0 && s.indexOf("<") > 0) {
-						String ticker = s.substring(s.indexOf(">") + 1,
-								s.indexOf("<"));
-						tickers.add(ticker);
-						System.out.print(ticker
-								+ "    ");
-					}
-				} catch (Exception e) {
-					// System.err.println("error: "+s);
-				} 
+		ArrayList<String> tickers = new ArrayList<String>();
+		String[] getTickersFrom = { "   " };
+		try {
+			String fromFile = FileUtils.readFileToString(htmlFile);
+			getTickersFrom = fromFile.replaceAll("\\s+", "").split("q\\?s=");
+			System.out.println("\n" + htmlFile.getName() + "      --->"
+					+ getTickersFrom.length + "     :>");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-			return tickers;
+
+		for (int i = 1; i < getTickersFrom.length; i++) {
+			String s = getTickersFrom[i];
+			try {
+				if (s.indexOf(">") > 0 && s.indexOf("<") > 0) {
+					String ticker = s.substring(s.indexOf(">") + 1,
+							s.indexOf("<"));
+					tickers.add(ticker);
+					System.out.print(ticker + "    ");
+				}
+			} catch (Exception e) {
+				// System.err.println("error: "+s);
+			}
+		}
+		return tickers;
 	}
+
 	private static ActionListener makeDBLoadButtonListener(
-			final String buttonTitle,final JRadioButton yes) {
+			final String buttonTitle, final JRadioButton yes) {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				if(yes.isSelected())
-				startLoadingDataBase();
-				JFrame jf = new JFrame(buttonTitle);
-				jf.setSize(900, 100);
-				jf.setVisible(true);
-				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				if (yes.isSelected())
+					startLoadingDataBase();
+
+				JScrollPanelledPane filesTab = JComponentFactory
+						.doHtmlTickerFilesTab();
+
+				EarningsTest.singleton.gui.add("Earnings Reports", filesTab);
 			}
 		};
 	}
@@ -228,7 +220,8 @@ public class JComponentFactory  {
 
 			@Override
 			public void run() {
-			 EarningsTest.db = new Database(EarningsTest.PATH_SOURCE.getText());
+				EarningsTest.db = new Database(
+						EarningsTest.PATH_SOURCE.getText());
 			}
 
 		});
@@ -249,7 +242,7 @@ public class JComponentFactory  {
 		return jta;
 	}
 
-	public static CustomButton doBrowseButton(final JTextArea textToUpdate) {
+	public static CustomButton doPathBrowseButton(final JTextArea textToUpdate) {
 		final JFileChooser fc = new JFileChooser();
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		final CustomButton a = new CustomButton("browse");
@@ -262,12 +255,131 @@ public class JComponentFactory  {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
 					String path = file.getAbsolutePath();
- 
 
 					textToUpdate.append(path);
 
 				}
 
+			}
+
+		});
+		return a;
+	}
+
+	public static CustomButton doFileMoveButton(final File dls) {
+		final String title = dls.getName();
+		final CustomButton a = new CustomButton(title);
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String root = EarningsTest.PATH_SOURCE.getText();
+				if (title.contains("BIG_nas")) {
+					String newLocation = root + File.separator + "lg"
+							+ File.separator + "q";
+
+					try {
+						FileUtils.moveFileToDirectory(dls,
+								new File(newLocation), true);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				} else if (title.contains("nas")) {
+
+					String newLocation = root + File.separator + "sm"
+							+ File.separator + "q";
+					try {
+						FileUtils.moveFileToDirectory(dls,
+								new File(newLocation), true);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				if (title.contains("BIG_ny")) {
+
+					String newLocation = root + File.separator + "lg"
+							+ File.separator + "y";
+					try {
+						FileUtils.moveFileToDirectory(dls,
+								new File(newLocation), true);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				} else if (title.contains("ny")) {
+					String newLocation = root + File.separator + "sm"
+							+ File.separator + "y";
+					try {
+						FileUtils.moveFileToDirectory(dls,
+								new File(newLocation), true);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+
+			}
+
+		});
+		return a;
+	}
+
+	public static CustomButton doConfirmMoveAllFiles() {
+		// TODO: ADD VALIDATION BASED ON EXISTING DATE NUMBERS AND FILE SIZE
+		final CustomButton a = new CustomButton(
+				"MOVE ALL OF THESE FILES TO DATABASE");
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				File[] downloads = new File(EarningsTest.PATH_DOWNLOADS
+						.getText()).listFiles();
+				Arrays.sort(downloads, NameFileComparator.NAME_COMPARATOR);
+				for (File dls : downloads) {
+					if (dls.getName().contains("BIG_n")
+							|| dls.getName().contains("nas_")
+							|| dls.getName().contains("ny_")) {
+						final String title = dls.getName();
+						String root = EarningsTest.PATH_SOURCE.getText();
+						if (title.contains("BIG_nas")) {
+							String newLocation = root + File.separator + "lg"
+									+ File.separator + "q";
+
+							try {
+								FileUtils.moveFileToDirectory(dls, new File(
+										newLocation), true);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						} else if (title.contains("nas")) {
+
+							String newLocation = root + File.separator + "sm"
+									+ File.separator + "q";
+							try {
+								FileUtils.moveFileToDirectory(dls, new File(
+										newLocation), true);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+						if (title.contains("BIG_ny")) {
+
+							String newLocation = root + File.separator + "lg"
+									+ File.separator + "y";
+							try {
+								FileUtils.moveFileToDirectory(dls, new File(
+										newLocation), true);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						} else if (title.contains("ny")) {
+							String newLocation = root + File.separator + "sm"
+									+ File.separator + "y";
+							try {
+								FileUtils.moveFileToDirectory(dls, new File(
+										newLocation), true);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+					}
+				}
 			}
 
 		});

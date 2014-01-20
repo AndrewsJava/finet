@@ -1,10 +1,10 @@
 package harlequinmettle.financialsnet;
- 
 
 import harlequinmettle.financialsnet.interfaces.DBLabels;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.GeneralPath;
@@ -25,7 +25,9 @@ public class ProfileCanvas extends JPanel {
 	public static final int W = 900;
 	public static final int H = DBLabels.labels.length * PART
 			+ DBLabels.labels.length * BUFFER + 4 * PART;
-
+	public static final int FONT_SIZE = 30;
+	public static final Font BIG_FONT = new Font("Serif", Font.BOLD, FONT_SIZE);
+	public static final Color TEXT_COLOR = new Color(100,130, 200, 100);
 	public Rectangle2D.Float[] borders = new Rectangle2D.Float[DBLabels.labels.length + 1];
 	public ArrayList<Rectangle2D.Float[]> histos = new ArrayList<Rectangle2D.Float[]>();
 	public ArrayList<Rectangle2D.Float> volume = new ArrayList<Rectangle2D.Float>();
@@ -48,8 +50,10 @@ public class ProfileCanvas extends JPanel {
 			scalesB[i] = new Color(20, 20, 10 + 10 * i);// shades of
 		}
 	}
+	int tickerID;
 
 	public ProfileCanvas(int id) {
+		tickerID = id;
 		setPreferredSize(new Dimension(W, H));
 		ArrayList<float[]> coData = new ArrayList<float[]>();
 		TreeMap<Float, float[]> technicals = new TreeMap<Float, float[]>();
@@ -182,11 +186,12 @@ public class ProfileCanvas extends JPanel {
 	private float max(ArrayList<Float> data) {
 		float max = Float.NEGATIVE_INFINITY;
 		for (float f : data) {
-			if(f!=f)continue;
+			if (f != f)
+				continue;
 			if (f > max)
 				max = f;
 		}
-		if(max==Float.NEGATIVE_INFINITY)
+		if (max == Float.NEGATIVE_INFINITY)
 			max = -1e-7f;
 		return max;
 	}
@@ -194,11 +199,12 @@ public class ProfileCanvas extends JPanel {
 	private float min(ArrayList<Float> data) {
 		float min = Float.POSITIVE_INFINITY;
 		for (float f : data) {
-			if(f!=f)continue;
+			if (f != f)
+				continue;
 			if (f < min)
 				min = f;
 		}
-		if(min==Float.POSITIVE_INFINITY)
+		if (min == Float.POSITIVE_INFINITY)
 			min = -1e-7f;
 		return min;
 	}
@@ -278,7 +284,6 @@ public class ProfileCanvas extends JPanel {
 		Graphics2D g = (Graphics2D) g1;
 		g.setColor(Color.darkGray);
 		g.fillRect(0, 0, W, H);
-
 		int k = 0;
 		for (Rectangle2D.Float[] histo : histos) {
 			int j = 0;
@@ -318,18 +323,46 @@ public class ProfileCanvas extends JPanel {
 		for (Rectangle2D.Float v : volume) {
 			g.draw(v);
 		}
-		g.drawString("" + volRange.x, W - 100, H-40);
-		g.drawString("" + volRange.y, W - 100, H-4*PART+30);
-		
+		g.drawString("" + volRange.x, W - 100, H - 40);
+		g.drawString("" + volRange.y, W - 100, H - 4 * PART + 30);
+
 		g.setColor(Color.magenta);
 		g.draw(pricePath);
 
-		g.drawString("" + priceRange.x, W - 100, H-55);
-		g.drawString("" + priceRange.y, W - 100, H-4*PART+15);
- 
+		g.drawString("" + priceRange.x, W - 100, H - 55);
+		g.drawString("" + priceRange.y, W - 100, H - 4 * PART + 15);
+
 		g.setColor(Color.blue);
 		for (GeneralPath indi : indicies) {
 			g.draw(indi);
 		}
+		drawTextInBackground(g);
 	}
-}
+
+	private void drawTextInBackground(Graphics2D g) {
+		Font original = g.getFont();
+		g.setColor(TEXT_COLOR);
+		g.setFont(BIG_FONT);
+		String t = Database.DESCRIPTIONS.get(Database.dbSet.get(tickerID))
+				.replaceAll("_", " ");
+		String[] words = t.split(" ");
+		int ct = 0;
+		int wordsPerLine = 6;
+		ArrayList<String> lines = new ArrayList<String>();
+		String line = "";
+		for (String word : words) {
+			ct++;
+			line += word + " ";
+			if (ct % wordsPerLine == 0) {
+				lines.add(new String(line));
+				line = "";
+			}
+		}
+		ct = 0;
+		for(String someWords: lines){
+			
+			g.drawString(someWords,15,50+ ct++ * (FONT_SIZE+6)	);
+		}
+		g.setFont(original);
+		}
+	} 

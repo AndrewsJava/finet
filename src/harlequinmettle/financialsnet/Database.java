@@ -64,6 +64,8 @@ public class Database implements Qi, Yi, DBLabels {
 
 	int dataRead = 0;
 	int dataNotRead = 0;
+	
+	static boolean loaded = false;
 
 	// PARSEING:
 	// LOADING:
@@ -114,7 +116,7 @@ public class Database implements Qi, Yi, DBLabels {
 			System.out.println("week    : " + formated + "   --d> "
 					+ ((int) (1000 * ent.getValue()) / 1000.0));
 		}
-
+loaded = true;
 		System.out.println("VALID DATA: " + valid);
 		System.out.println("INVALID DT: " + invalid);
 		System.out.println("total Null: " + totalNull);
