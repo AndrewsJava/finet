@@ -1,18 +1,26 @@
 package harlequinmettle.financialsnet;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -142,9 +150,12 @@ public class JComponentFactory {
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				if(!Database.loaded)return;
+				if (!Database.loaded)
+					return;
 				JFrame jf = new JFrame(buttonTitle);
-				jf.setSize(900, 500);
+				jf.setSize(1300,650);
+				final ArrayList<ProfileCanvas> theCanvasesToRescale = new ArrayList<ProfileCanvas>();
+				jf.addComponentListener(JComponentFactory.doWindowRescaleListener(theCanvasesToRescale));
 				jf.setVisible(true);
 				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				JTabbedPane compareTickers = new JTabbedPane();
@@ -157,10 +168,13 @@ public class JComponentFactory {
 					System.out.println(ent.getKey() + "  --->" + ent.getValue());
 				for (String s : tickers) {
 					int tickerLocation = Database.dbSet.indexOf(s);
-					if (tickerLocation > 0)
+					if (tickerLocation > 0){
+						ProfileCanvas pc = new ProfileCanvas(
+								tickerLocation);
+						theCanvasesToRescale.add(pc);
 						compareTickers.add(s, JComponentFactory
-								.makeJScrollPane(new ProfileCanvas(
-										tickerLocation)));
+								.makeJScrollPane(pc));
+					}
 				}
 			}
 		}
@@ -168,6 +182,23 @@ public class JComponentFactory {
 		);
 
 		return a;
+	}
+ 
+
+	protected static ComponentAdapter doWindowRescaleListener(
+			final ArrayList<ProfileCanvas> theCanvasesToRescale) {
+		return new ComponentAdapter() {
+
+		 
+			@Override
+			public void componentResized(ComponentEvent arg0) {
+				for(ProfileCanvas pc : theCanvasesToRescale)
+				pc.rescaleCanvas(arg0.getComponent().getBounds().getSize());   
+				
+			}
+ 
+			
+		};
 	}
 
 	private static ArrayList<String> parseFileForTickers(File htmlFile) {
@@ -206,7 +237,10 @@ public class JComponentFactory {
 			public void actionPerformed(ActionEvent arg0) {
 				if (yes.isSelected())
 					startLoadingDataBase();
-
+				else 
+					return;
+				yes.setSelected(false);
+				yes.setEnabled(false);
 				JScrollPanelledPane filesTab = JComponentFactory
 						.doHtmlTickerFilesTab();
 
@@ -383,6 +417,52 @@ public class JComponentFactory {
 			}
 
 		});
+		return a;
+	}
+
+	public static CustomButton makeTextExplorerLauchButton(
+			final String buttonTitle) {
+		final CustomButton a = new CustomButton(buttonTitle);
+
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (!Database.loaded)
+					return;
+				JFrame jf = new JFrame(buttonTitle);
+				jf.setSize(900, 500);
+				jf.setVisible(true);
+				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				JTextArea wordStat = new JTextArea();
+				JScrollPane compareTickers = JComponentFactory
+						.makeTextScroll(wordStat);
+				jf.add(compareTickers);
+				
+				TreeMap<Integer, ArrayList<String>> orderResults = new TreeMap<Integer, ArrayList<String>>();
+
+				for (Entry<String, Integer> ent : Database.WORD_STATS
+						.entrySet()) {
+					String word = ent.getKey();
+					Integer count = ent.getValue();
+					if (orderResults.containsKey(count)) {
+						orderResults.get(count).add(word);
+					} else {
+						ArrayList<String> startArray = new ArrayList<String>();
+						startArray.add(word);
+						orderResults.put(count, startArray);
+					}
+				}
+				for(Entry<Integer,ArrayList<String>> ent: orderResults.entrySet()){
+//	wordStat.append("\n\n"+ent.getKey()+"\n"+ent.getValue());
+					if(ent.getKey()>1600)
+						for(String s: ent.getValue())
+					wordStat.append("\""+s+"\" , ");
+				}
+			}
+		}
+
+		);
+
 		return a;
 	}
 

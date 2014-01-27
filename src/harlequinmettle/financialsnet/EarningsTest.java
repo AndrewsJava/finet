@@ -101,10 +101,18 @@ public class EarningsTest {
 		addDatabaseLocator(stepScroll);
 		addDownloadsLocator(stepScroll);
 		addDatabaseLoadPanel(stepScroll);
+		addTextStatLauncherPanel(stepScroll);
 		return stepScroll;
 	}
 
-	private void addBasicControlls(JScrollPanelledPane stepScroll) {
+	private void addTextStatLauncherPanel(JScrollPanelledPane stepScroll) {
+		JPanel textExplor = JComponentFactory
+		.makePanel(JComponentFactory.HORIZONTAL);
+  
+		textExplor.add(JComponentFactory.makeTextExplorerLauchButton("Explor Text Stats" ));
+stepScroll.addComp(textExplor);
+	}
+		private void addBasicControlls(JScrollPanelledPane stepScroll) {
 
 		final CustomButton buttonRefresh = new CustomButton("refresh");
 		final CustomButton buttonSave = new CustomButton("save");

@@ -7,6 +7,9 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -21,24 +24,30 @@ import javax.swing.JPanel;
 public class ProfileCanvas extends JPanel {
 	public Color bg = new Color(100, 180, 220);
 	public static final int BUFFER = 3;
-	public static final int PART = 100;
-	public static final int W = 900;
-	public static final int H = DBLabels.labels.length * PART
+	public static final float HORIZONTAL_MARGIN_TOTAL = 70.0F;
+	public static final int PART = 150;
+	public static int W = 1400;
+	public static int H = DBLabels.labels.length * PART
 			+ DBLabels.labels.length * BUFFER + 4 * PART;
 	public static final int FONT_SIZE = 30;
-	public static final Font BIG_FONT = new Font("Serif", Font.BOLD, FONT_SIZE);
-	public static final Color TEXT_COLOR = new Color(100,130, 200, 100);
+	public static final Font BIG_FONT = new Font("Sans-Serif", Font.BOLD,
+			FONT_SIZE);
+	public static final Color TEXT_COLOR = new Color(120, 150, 220, 100);
 	public Rectangle2D.Float[] borders = new Rectangle2D.Float[DBLabels.labels.length + 1];
 	public ArrayList<Rectangle2D.Float[]> histos = new ArrayList<Rectangle2D.Float[]>();
 	public ArrayList<Rectangle2D.Float> volume = new ArrayList<Rectangle2D.Float>();
 	public ArrayList<Point2D.Float> minsMax = new ArrayList<Point2D.Float>();
+
+	ArrayList<String> lines = new ArrayList<String>();
+	TreeMap<Float, float[]> technicals = new TreeMap<Float, float[]>();
+	ArrayList<float[]> coData = new ArrayList<float[]>();
 
 	Point2D.Float volRange = new Point2D.Float();
 	Point2D.Float priceRange = new Point2D.Float();// /////SET IN METHODS SHOW
 													// IN PAINT
 
 	public ArrayList<GeneralPath> indicies = new ArrayList<GeneralPath>();
-	private int barwidth = (W - 40) / StatInfo.nbars;
+	private double barwidth = (W - HORIZONTAL_MARGIN_TOTAL) / StatInfo.nbars;
 	public static final int nColors = 20;
 	public static Color[] scalesR = new Color[nColors];
 	public static Color[] scalesB = new Color[nColors];
@@ -51,28 +60,42 @@ public class ProfileCanvas extends JPanel {
 		}
 	}
 	int tickerID;
+	double date = 0;
+	double day = 0;
+	double generalInterval = 0;
+	int x, y;
+	final MouseAdapter dateDisplayer = new MouseAdapter() {
+
+		public void mouseClicked(MouseEvent e) {
+			x = e.getX();
+			y = e.getY(); 
+			//int index =  (int) ((W - 2 * BUFFER) / (x - 2 * BUFFER) / generalInterval* technicals.size()) ;
+			int index =  (int) ( (x - 2 * BUFFER) / generalInterval )  ;
+			day = (Float) technicals.keySet().toArray()[index];
+			repaint();
+		}
+	};
 
 	public ProfileCanvas(int id) {
+		addMouseListener(dateDisplayer);
 		tickerID = id;
+		setTextDescriptionInArray();
 		setPreferredSize(new Dimension(W, H));
-		ArrayList<float[]> coData = new ArrayList<float[]>();
-		TreeMap<Float, float[]> technicals = new TreeMap<Float, float[]>();
 
 		for (int i = 0; i < DBLabels.labels.length; i++) {
 			Rectangle2D.Float border = new Rectangle2D.Float(BUFFER, BUFFER + i
-					* BUFFER + i * PART, W - 40, PART);
+					* BUFFER + i * PART, W - HORIZONTAL_MARGIN_TOTAL, PART);
 			borders[i] = border;
-
 		}
 		int number = DBLabels.labels.length;
 		Rectangle2D.Float border = new Rectangle2D.Float(BUFFER, BUFFER
-				+ number * BUFFER + number * PART, W - 40, 4 * PART);
+				+ number * BUFFER + number * PART, W - HORIZONTAL_MARGIN_TOTAL,
+				4 * PART);
 		borders[number] = border;
 
 		for (float[][] allData : Database.DB_ARRAY.values()) {
 			// get all company data (all 87 pts) for each collected set
 			coData.add(allData[id]);//
-
 		}
 
 		int offset = 0;
@@ -101,11 +124,72 @@ public class ProfileCanvas extends JPanel {
 		// "adjClose",//6
 		for (float[][][] tech : Database.DB_PRICES.values()) {
 			for (int i = 0; i < tech[id].length; i++) {
+				// map date factor to days price/vol data
+				technicals.put(tech[id][i][0], tech[id][i]);
+			}
+
+		}
+		pricePath = createPricePath(technicals);
+		volume = createVolumeBars(technicals);
+		for (int i = 0; i < DBLabels.labels.length; i++) {
+			indicies.add(makePathFromData(coData, i));
+		}
+	}
+
+	public ProfileCanvas(int id, int width, int height) {
+		addMouseListener(dateDisplayer);
+		tickerID = id;
+		setTextDescriptionInArray();
+		rescaleCanvas(new Dimension(width, height));
+
+		for (float[][] allData : Database.DB_ARRAY.values()) {
+			// get all company data (all 87 pts) for each collected set
+			coData.add(allData[id]);//
+
+		}
+
+		for (float[][][] tech : Database.DB_PRICES.values()) {
+			for (int i = 0; i < tech[id].length; i++) {
 
 				technicals.put(tech[id][i][0], tech[id][i]);
 			}
 
 		}
+	}
+
+	public void rescaleCanvas(Dimension dim) {
+		W = dim.width;
+		// H = dim.height;
+		histos.clear();
+		indicies.clear();
+		barwidth = (W - HORIZONTAL_MARGIN_TOTAL) / StatInfo.nbars;
+		setPreferredSize(new Dimension(W, H));
+
+		for (int i = 0; i < DBLabels.labels.length; i++) {
+			Rectangle2D.Float border = new Rectangle2D.Float(BUFFER, BUFFER + i
+					* BUFFER + i * PART, W - HORIZONTAL_MARGIN_TOTAL, PART);
+			borders[i] = border;
+
+		}
+		int number = DBLabels.labels.length;
+		Rectangle2D.Float border = new Rectangle2D.Float(BUFFER, BUFFER
+				+ number * BUFFER + number * PART, W - HORIZONTAL_MARGIN_TOTAL,
+				4 * PART);
+		borders[number] = border;
+
+		int offset = 0;
+		for (StatInfo stat : Database.statistics) {
+			// compare these companies values to statistics
+			Rectangle2D.Float[] histog = setUpBars(stat.histogram, offset);
+			histos.add(histog);
+			float datapt = coData.get(0)[offset];
+			if (datapt == datapt)
+				comp[offset] = stat.locationInHistogram(datapt);
+			else
+				comp[offset] = -10;
+			offset++;
+		}
+
 		pricePath = createPricePath(technicals);
 		volume = createVolumeBars(technicals);
 		for (int i = 0; i < DBLabels.labels.length; i++) {
@@ -128,10 +212,10 @@ public class ProfileCanvas extends JPanel {
 		// System.out.println("range: "+minimumPt+"   ---   "+maximumPt);
 		float range = maximumPt - minimumPt;
 		float localScale = (PART) / range;
-		float graphInterval = (W - 40) / (pts.size() - 1);
+		float graphInterval = (W - HORIZONTAL_MARGIN_TOTAL) / (pts.size() - 1);
 		int i = 0;
 		for (float f : pts) {
-			float xpt = 20 + graphInterval * i;
+			float xpt = 2 * BUFFER + graphInterval * i;
 
 			float ypt = BUFFER + id * BUFFER + id * PART + PART
 					- (localScale * (f - minimumPt));
@@ -168,13 +252,13 @@ public class ProfileCanvas extends JPanel {
 		float maximumPt = new BigDecimal(max(tradeVol)).round(
 				new MathContext(3)).floatValue();
 		volRange = new Point2D.Float(minimumPt, maximumPt);
-		float graphicsScale = ((float) 4 * PART) / max;
-		float barwidth = (W - 40) / tradeVol.size();
+		float graphicsScale = (4 * PART) / max;
+		float rectWidth = (W - HORIZONTAL_MARGIN_TOTAL) / tradeVol.size();
 		int i = 0;
 		for (float f : tradeVol) {
 			float top = (H - 30 - graphicsScale * f);
-			float left = 20 + (barwidth) * i;
-			float width = (barwidth);
+			float left = 2 * BUFFER + (rectWidth) * i;
+			float width = (rectWidth);
 			float height = (graphicsScale * f);
 			vol.add(new Rectangle2D.Float(left, top, width, height));
 			i++;
@@ -219,9 +303,6 @@ public class ProfileCanvas extends JPanel {
 			highlow.add(trades[3]);
 			adjCloses.add(trades[6]);
 		}
-		// float minimumPt = StatInfo.findMinimum(highlow);
-		// float maximumPt = StatInfo.findMaximum(highlow);
-
 		float minimumPt = new BigDecimal(min(adjCloses)).round(
 				new MathContext(3)).floatValue();
 		float maximumPt = new BigDecimal(max(adjCloses)).round(
@@ -230,12 +311,15 @@ public class ProfileCanvas extends JPanel {
 		// System.out.println("range: "+minimumPt+"   ---   "+maximumPt);
 		float range = maximumPt - minimumPt;
 		float localScale = (4 * PART) / range;
-		float graphInterval = (W - 40) / (technicals.size() - 1);
+		float graphInterval = (W - HORIZONTAL_MARGIN_TOTAL)
+				/ (technicals.size() - 1.0f);
+		generalInterval = graphInterval;
+		// double graphInterval = barwidth;
 		int i = 0;
-		for (float f : adjCloses) {
-			float xpt = 20 + graphInterval * i;
+		for (double f : adjCloses) {
+			double xpt = 2 * BUFFER + graphInterval * i;
 
-			float ypt = H - (localScale * (f - minimumPt));
+			double ypt = H - (localScale * (f - minimumPt));
 			// System.out.println("POINTS IN PATH: "+xpt+"   ---   "+ypt);
 
 			if (i == 0) {
@@ -259,7 +343,7 @@ public class ProfileCanvas extends JPanel {
 		for (int i = 0; i < StatInfo.nbars; i++) {
 			int top = BUFFER + BUFFER * offset + PART * offset
 					+ (PART - (int) (graphicsScale * histogram[i]));
-			int left = BUFFER + ((int) barwidth) * i;
+			int left = BUFFER + (int) (barwidth) * i;
 			int width = (int) (barwidth);
 			int height = (int) (graphicsScale * histogram[i]);
 			histoBars[i] = new Rectangle2D.Float(left, top, width, height);
@@ -343,14 +427,51 @@ public class ProfileCanvas extends JPanel {
 		Font original = g.getFont();
 		g.setColor(TEXT_COLOR);
 		g.setFont(BIG_FONT);
+if(x>0.8*W){
+
+	g.drawString(""+(int)day,x-100,y);
+}else{
+		g.drawString(""+(int)day,x,y);
+}int ct = 0;
+		for (String someWords : lines) {
+
+			g.drawString(someWords, 15, 50 + ct++ * (FONT_SIZE + 6));
+		}
+		g.setFont(original);
+	}
+
+	private void setTextDescriptionInArray() {
 		String t = Database.DESCRIPTIONS.get(Database.dbSet.get(tickerID))
 				.replaceAll("_", " ");
+		double rankTotal = calculateWordRankTotal(t);
+		double rankAverage = calculateWordRankAverage(t);
+		lines.add(new String(" "));
+		lines.add(new String(" "));
+		lines.add("word rank sum: " + rankTotal);
+		lines.add("-----");
+		lines.add("-----");
+		lines.add("word rank avg:  " + rankAverage);
+		lines.add("-----");
+		lines.add("-----");
+
 		String[] words = t.split(" ");
 		int ct = 0;
 		int wordsPerLine = 6;
-		ArrayList<String> lines = new ArrayList<String>();
 		String line = "";
+		boolean foundEmployeeCount = false;
 		for (String word : words) {
+			if (!foundEmployeeCount && ct < 10) {
+				if ((word.replaceAll(",", "")).matches("-?\\d+(\\.\\d+)?")) {
+
+					lines.add(new String(line));
+					lines.add("-----");
+					lines.add(new String(word));
+					lines.add("-----");
+					line = "";
+					foundEmployeeCount = true;
+					continue;
+				}
+			}
 			ct++;
 			line += word + " ";
 			if (ct % wordsPerLine == 0) {
@@ -358,11 +479,26 @@ public class ProfileCanvas extends JPanel {
 				line = "";
 			}
 		}
-		ct = 0;
-		for(String someWords: lines){
-			
-			g.drawString(someWords,15,50+ ct++ * (FONT_SIZE+6)	);
+	}
+
+	private double calculateWordRankTotal(String text) {
+		double rank = 0;
+		String[] words = Database.simplifyText(text).split(" ");
+		for (String word : words) {
+
+			rank += 1.0 / Database.WORD_STATS.get(word);
 		}
-		g.setFont(original);
+		return new BigDecimal(rank).round(new MathContext(3)).doubleValue();
+	}
+
+	private double calculateWordRankAverage(String text) {
+		double rank = 0;
+		String[] words = Database.simplifyText(text).split(" ");
+		for (String word : words) {
+
+			rank += 1.0 / Database.WORD_STATS.get(word);
 		}
-	} 
+		return new BigDecimal(rank / words.length).round(new MathContext(3))
+				.doubleValue();
+	}
+}

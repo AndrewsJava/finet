@@ -1,5 +1,4 @@
 package harlequinmettle.financialsnet;
- 
 
 import harlequinmettle.financialsnet.interfaces.DBLabels;
 import harlequinmettle.financialsnet.interfaces.Qi;
@@ -21,8 +20,8 @@ import java.util.TreeSet;
 import javax.swing.JTextField;
 
 public class Database implements Qi, Yi, DBLabels {
-	//public static final String ROOT = "sm/q";
-	//public static final String OBJ_ROOT = "sm/OBJECTS";
+	// public static final String ROOT = "sm/q";
+	// public static final String OBJ_ROOT = "sm/OBJECTS";
 	public static final int FIELD_COUNT = DBLabels.labels.length;
 	public static final JTextField[] LOWS = new JTextField[FIELD_COUNT];
 	public static final JTextField[] HIGHS = new JTextField[FIELD_COUNT];
@@ -44,16 +43,16 @@ public class Database implements Qi, Yi, DBLabels {
 	public static final TreeMap<Float, Integer> BUNDLES_SIZES = new TreeMap<Float, Integer>();
 
 	public static ArrayList<StatInfo> statistics = new ArrayList<StatInfo>();
-	
-	public static final TreeMap<Float, Integer> VALID_COUNT = new TreeMap<Float, Integer>();
 
+	public static final TreeMap<Float, Integer> VALID_COUNT = new TreeMap<Float, Integer>();
 
 	public static final int LOAD_NASDAQ = 1500000;
 	public static final int LOAD_NYSE = 5555;
 	public static final int LOAD_BOTH = 22022;
-	//public static String[] dbSet;
+	// public static String[] dbSet;
 	public static ArrayList<String> dbSet;
 	public static final TreeMap<String, String> DESCRIPTIONS = new TreeMap<String, String>();
+	public static final TreeMap<String, Integer> WORD_STATS = new TreeMap<String, Integer>();
 	public static int valid = 0;
 	public static int invalid = 0;
 	int totalNull = 0;
@@ -64,7 +63,7 @@ public class Database implements Qi, Yi, DBLabels {
 
 	int dataRead = 0;
 	int dataNotRead = 0;
-	
+
 	static boolean loaded = false;
 
 	// PARSEING:
@@ -103,6 +102,7 @@ public class Database implements Qi, Yi, DBLabels {
 		}
 
 	}
+
 	public Database(String root) {
 		SystemMemoryUsage smu = new SystemMemoryUsage();
 		dbSet = new ArrayList<String>(Arrays.asList(concat(QQ, YY)));
@@ -116,7 +116,7 @@ public class Database implements Qi, Yi, DBLabels {
 			System.out.println("week    : " + formated + "   --d> "
 					+ ((int) (1000 * ent.getValue()) / 1000.0));
 		}
-loaded = true;
+		loaded = true;
 		System.out.println("VALID DATA: " + valid);
 		System.out.println("INVALID DT: " + invalid);
 		System.out.println("total Null: " + totalNull);
@@ -130,14 +130,15 @@ loaded = true;
 			System.out.println("week    : " + ent.getKey()
 					+ "   --valid price data-> " + ent.getValue());
 		}
-calculateStatistics();
+		calculateStatistics();
 	}
 
 	private void calculateStatistics() {
 		for (int i = 0; i < FIELD_COUNT; i++) {
-			statistics.add(generateStatistics(i)); 
+			statistics.add(generateStatistics(i));
 		}
 	}
+
 	public StatInfo generateStatistics(int id) {
 		ArrayList<Float> stats = new ArrayList<Float>();
 		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
@@ -236,20 +237,19 @@ calculateStatistics();
 	private void loadDatabaseWithData(String root) {
 		time = System.currentTimeMillis();
 		// try to load from obj else {
-		root+=File.separator+"sm"+File.separator;
-		System.out
-		.println("---*****************************--->>>>>>>"+root);
-		files_q = new File(root+"q").list();
+		root += File.separator + "sm" + File.separator;
+		System.out.println("---*****************************--->>>>>>>" + root);
+		files_q = new File(root + "q").list();
 		Arrays.sort(files_q);
-		files_y = new File(root+"y").list();
+		files_y = new File(root + "y").list();
 		Arrays.sort(files_y);
 		System.out.println("loading database: " + files_q.length
 				+ " files to load");
 		// for each file store last price for each ticker
 
 		for (int i = 0; i < files_q.length; i++) {
-			System.out
-					.println("loading files " + files_q[i] + "    " + files_y[i]);
+			System.out.println("loading files " + files_q[i] + "    "
+					+ files_y[i]);
 
 			convertFileDataToArray(i, root);
 
@@ -257,10 +257,35 @@ calculateStatistics();
 
 		DataUtil.loadStringData("NASDAQ_PROFILES_I.txt", DESCRIPTIONS);
 		DataUtil.loadStringData("NYSE_PROFILES_I.txt", DESCRIPTIONS);
+		calculateWordStatistics(DESCRIPTIONS, WORD_STATS);
+	}
+
+	private void calculateWordStatistics(TreeMap<String, String> descriptions2,
+			TreeMap<String, Integer> wordStats) {
+		for (String line : descriptions2.values()) {
+			String reformatted = Database.simplifyText(line);
+			String[] words = reformatted.split(" ");
+			for (String word : words) {
+				if (wordStats.containsKey(word)) {
+					wordStats.put(word, wordStats.get(word) + 1);
+				} else {
+					wordStats.put(word, 1);
+				}
+			}
+		}
+	}
+
+	public static String simplifyText(String line) {
+		String reformatted = line.toLowerCase().replaceAll(",", "")
+				.replaceAll("[^A-Za-z]", " ");
+		while (reformatted.contains("  ")) {
+			reformatted = reformatted.replaceAll("  ", " ");
+		}
+		return reformatted;
 	}
 
 	// for each file i convert stored data to numeric data
-	private void convertFileDataToArray(int i,String root) {
+	private void convertFileDataToArray(int i, String root) {
 		// for each time stage file construct array 85 fundamental data
 		// points for each symbol
 		float[][] data = new float[dbSet.size()][];
@@ -269,11 +294,13 @@ calculateStatistics();
 		float[][][] pdata = new float[dbSet.size()][][];
 		float[] weeksPrices = new float[dbSet.size()];
 		TreeMap<String, String> textData = new TreeMap<String, String>();
-		Float days = Float.parseFloat(files_q[i].replaceAll("\\.txt", "").split(
-				"_")[1]);
-		if (!checkForObjectRestore(i, days,root)) {
-			DataUtil.loadStringData(root+"q"+File.separator + files_q[i], textData);
-			DataUtil.loadStringData(root+"y"+File.separator + files_y[i], textData);
+		Float days = Float.parseFloat(files_q[i].replaceAll("\\.txt", "")
+				.split("_")[1]);
+		if (!checkForObjectRestore(i, days, root)) {
+			DataUtil.loadStringData(root + "q" + File.separator + files_q[i],
+					textData);
+			DataUtil.loadStringData(root + "y" + File.separator + files_y[i],
+					textData);
 			int nullcount = 0;
 			// ASSUMES A 1 TO 1 EXISTENCE OF NAS AND NY FILES - TRUE SO FAR
 			for (int j = 0; j < dbSet.size(); j++) {
@@ -335,13 +362,17 @@ calculateStatistics();
 			// VALID_COUNT.put(days, valid(weeksPrices));
 
 			// float[][] data = new float[dbSet.length][];
-			DataUtil.memorizeObject(data, root+File.separator+"OBJECTS"+File.separator  + "DATA_" + days);
+			DataUtil.memorizeObject(data, root + File.separator + "OBJECTS"
+					+ File.separator + "DATA_" + days);
 			// float[][][] pdata = new float[dbSet.length][10][7];
-			DataUtil.memorizeObject(pdata, root+File.separator+"OBJECTS"+File.separator  + "TECHNICAL_" + days);
+			DataUtil.memorizeObject(pdata, root + File.separator + "OBJECTS"
+					+ File.separator + "TECHNICAL_" + days);
 			// float[] weeksPrices = new float[dbSet.length];
-			DataUtil.memorizeObject(weeksPrices, root+File.separator+"OBJECTS"+File.separator  + "PRICES_" + days);
+			DataUtil.memorizeObject(weeksPrices, root + File.separator
+					+ "OBJECTS" + File.separator + "PRICES_" + days);
 			// float marketSum = sum(weeksPrices);
-			DataUtil.memorizeObject(marketSum, root+File.separator+"OBJECTS"+File.separator  + "SUM_" + days);
+			DataUtil.memorizeObject(marketSum, root + File.separator
+					+ "OBJECTS" + File.separator + "SUM_" + days);
 
 		}
 		Thread.yield();
@@ -359,20 +390,24 @@ calculateStatistics();
 	private boolean checkForObjectRestore(int i, float days, String root) {
 
 		// float[][] data = new float[dbSet.length][];
-	 
-		float[][] data = DataUtil.restore2D(root+File.separator+"OBJECTS"+File.separator + "DATA_" + days);
+
+		float[][] data = DataUtil.restore2D(root + File.separator + "OBJECTS"
+				+ File.separator + "DATA_" + days);
 		if (data == null)
 			return false;
 		// float[][][] pdata = new float[dbSet.length][10][7];
-		float[][][] pdata = DataUtil.restore3D(root+File.separator+"OBJECTS"+File.separator + "TECHNICAL_" + days);
+		float[][][] pdata = DataUtil.restore3D(root + File.separator
+				+ "OBJECTS" + File.separator + "TECHNICAL_" + days);
 		if (pdata == null)
 			return false;
 		// float[] weeksPrices = new float[dbSet.length];
-		float[] weeksPrices = DataUtil.restore1D(root+File.separator+"OBJECTS"+File.separator +  "PRICES_" + days);
+		float[] weeksPrices = DataUtil.restore1D(root + File.separator
+				+ "OBJECTS" + File.separator + "PRICES_" + days);
 		if (weeksPrices == null)
 			return false;
 		// float marketSum = sum(weeksPrices);
-		Float marketSum = DataUtil.restoreFloat(root+File.separator+"OBJECTS"+File.separator  + "SUM_" + days);
+		Float marketSum = DataUtil.restoreFloat(root + File.separator
+				+ "OBJECTS" + File.separator + "SUM_" + days);
 		if (marketSum == null)
 			return false;
 
@@ -531,7 +566,7 @@ calculateStatistics();
 					// if data is invalid , or outside the limits exclude i
 					// for each id restriction limit bundle to valid data (not
 					// nan) and withing range
-					if (false ){ //DataControlls.INVERT[id].isSelected()) {
+					if (false) { // DataControlls.INVERT[id].isSelected()) {
 						if (data[i][id] != data[i][id]
 								|| (data[i][id] > lowlimit && data[i][id] < highlimit)) {
 							isIn = false;
