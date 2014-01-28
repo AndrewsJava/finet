@@ -9,19 +9,23 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import javax.swing.JPanel;
 
 public class ProfileCanvas extends JPanel {
+	SimpleDateFormat showDate = new SimpleDateFormat("YYYY-MMM-dd");
 	public Color bg = new Color(100, 180, 220);
 	public static final int BUFFER = 3;
 	public static final float HORIZONTAL_MARGIN_TOTAL = 70.0F;
@@ -68,13 +72,18 @@ public class ProfileCanvas extends JPanel {
 
 		public void mouseClicked(MouseEvent e) {
 			x = e.getX();
-			y = e.getY(); 
-			//int index =  (int) ((W - 2 * BUFFER) / (x - 2 * BUFFER) / generalInterval* technicals.size()) ;
-			int index =  (int) ( (x - 2 * BUFFER) / generalInterval )  ;
-			day = (Float) technicals.keySet().toArray()[index];
+			y = e.getY();
+			// int index = (int) ((W - 2 * BUFFER) / (x - 2 * BUFFER) /
+			// generalInterval* technicals.size()) ;
+			int index = (int) ((x - 2 * BUFFER) / generalInterval);
+			day = (Float) technicals.keySet().toArray()[index] + 1;
 			repaint();
 		}
 	};
+	private int earnDateX;
+	private int collectionDateX;
+
+	String dateInfo = "";
 
 	public ProfileCanvas(int id) {
 		addMouseListener(dateDisplayer);
@@ -134,13 +143,19 @@ public class ProfileCanvas extends JPanel {
 		for (int i = 0; i < DBLabels.labels.length; i++) {
 			indicies.add(makePathFromData(coData, i));
 		}
+
 	}
 
-	public ProfileCanvas(int id, int width, int height) {
+	public void setDateInfo(String di) {
+		dateInfo = di;
+		setDateLines(dateInfo);
+	}
+
+	public ProfileCanvas(String dateInfo, int id, int width, int height) {
 		addMouseListener(dateDisplayer);
 		tickerID = id;
+		this.dateInfo = dateInfo;
 		setTextDescriptionInArray();
-		rescaleCanvas(new Dimension(width, height));
 
 		for (float[][] allData : Database.DB_ARRAY.values()) {
 			// get all company data (all 87 pts) for each collected set
@@ -155,6 +170,41 @@ public class ProfileCanvas extends JPanel {
 			}
 
 		}
+
+		rescaleCanvas(new Dimension(width, height));
+	}
+
+	private void setDateLines(String dateInfo) {
+		String[] dates = dateInfo.replaceAll(".html", "").split("_URL_");
+		try {
+			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
+					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
+			int collectionDate =  (int) Double.parseDouble(dates[0]);
+			int index = 0;
+			for (Entry<Float, float[]> ent : technicals.entrySet()) {
+				int datePt = (int) (float) ent.getKey();
+				System.out.println(" comparison   (actual) (match)   : "+datePt +"    ==    "+earningsReportDate);
+				if (earningsReportDate == datePt) {
+					earnDateX = convertIndexToScreenPoint(index);
+				}
+				if (collectionDate == datePt) {
+					collectionDateX = convertIndexToScreenPoint(index);
+				}
+				index++;
+			}
+			System.out.println("\n\nearnings report date : "+earningsReportDate);
+			System.out.println("collection date      : "+collectionDate);
+		} catch (ParseException e) {
+			System.out.println("DATE PARSE ERROR   : "+Arrays.toString(dates));
+
+		}
+	}
+
+	private int convertIndexToScreenPoint(int index) {
+		int screenPoint =  (int) (index * generalInterval + 2 * BUFFER);
+		System.out.println("\n\nindex in map: "+index);
+		System.out.println("converted to screen : "+screenPoint);
+		return screenPoint;
 	}
 
 	public void rescaleCanvas(Dimension dim) {
@@ -195,6 +245,8 @@ public class ProfileCanvas extends JPanel {
 		for (int i = 0; i < DBLabels.labels.length; i++) {
 			indicies.add(makePathFromData(coData, i));
 		}
+
+		setDateLines(dateInfo);
 	}
 
 	private GeneralPath makePathFromData(ArrayList<float[]> coData, int id) {
@@ -421,18 +473,29 @@ public class ProfileCanvas extends JPanel {
 			g.draw(indi);
 		}
 		drawTextInBackground(g);
+		drawDateLines(g);
+	}
+
+	private void drawDateLines(Graphics2D g) {
+		g.setColor(Color.green);
+		g.drawLine(x  ,0, x, H);
+		g.setColor(Color.gray);
+		g.drawLine(collectionDateX, 0, collectionDateX, H);
+		g.setColor(Color.white);
+		g.drawLine(earnDateX, 0, earnDateX, H);
 	}
 
 	private void drawTextInBackground(Graphics2D g) {
 		Font original = g.getFont();
 		g.setColor(TEXT_COLOR);
 		g.setFont(BIG_FONT);
-if(x>0.8*W){
-
-	g.drawString(""+(int)day,x-100,y);
-}else{
-		g.drawString(""+(int)day,x,y);
-}int ct = 0;
+		String date = showDate.format(new Date((long) day * 24 * 3600 * 1000));
+		if (x > 0.8 * W) {
+			g.drawString(date, x - 200, y - 15);
+		} else {
+			g.drawString(date, x, y - 15);
+		}
+		int ct = 0;
 		for (String someWords : lines) {
 
 			g.drawString(someWords, 15, 50 + ct++ * (FONT_SIZE + 6));

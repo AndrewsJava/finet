@@ -152,7 +152,7 @@ public class JComponentFactory {
 			public void actionPerformed(ActionEvent arg0) {
 				if (!Database.loaded)
 					return;
-				JFrame jf = new JFrame(buttonTitle);
+				final JFrame jf = new JFrame(buttonTitle);
 				jf.setSize(1300,650);
 				final ArrayList<ProfileCanvas> theCanvasesToRescale = new ArrayList<ProfileCanvas>();
 				jf.addComponentListener(JComponentFactory.doWindowRescaleListener(theCanvasesToRescale));
@@ -163,14 +163,16 @@ public class JComponentFactory {
 				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
 						.get(a.getText()));
 
-				for (Entry<String, File> ent : EarningsTest.MAP_TO_FILES
-						.entrySet())
-					System.out.println(ent.getKey() + "  --->" + ent.getValue());
+//				for (Entry<String, File> ent : EarningsTest.MAP_TO_FILES
+//						.entrySet())
+//					System.out.println(ent.getKey() + "  --->" + ent.getValue());
 				for (String s : tickers) {
 					int tickerLocation = Database.dbSet.indexOf(s);
 					if (tickerLocation > 0){
-						ProfileCanvas pc = new ProfileCanvas(
-								tickerLocation);
+						ProfileCanvas pc = new ProfileCanvas(buttonTitle,
+								tickerLocation, jf.getWidth(),jf.getHeight());
+//						ProfileCanvas pc = new ProfileCanvas(
+//								tickerLocation);
 						theCanvasesToRescale.add(pc);
 						compareTickers.add(s, JComponentFactory
 								.makeJScrollPane(pc));
@@ -207,8 +209,7 @@ public class JComponentFactory {
 		try {
 			String fromFile = FileUtils.readFileToString(htmlFile);
 			getTickersFrom = fromFile.replaceAll("\\s+", "").split("q\\?s=");
-			System.out.println("\n" + htmlFile.getName() + "      --->"
-					+ getTickersFrom.length + "     :>");
+		 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
