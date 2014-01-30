@@ -458,16 +458,21 @@ public class ProfileCanvas extends JPanel {
 		g.setColor(Color.orange);
 		for (Rectangle2D.Float v : volume) {
 			g.draw(v);
-		}
-		g.drawString("" + volRange.x, W - 100, H - 40);
-		g.drawString("" + volRange.y, W - 100, H - 4 * PART + 30);
+		} 
 
 		g.setColor(Color.magenta);
 		g.draw(pricePath);
 
+		g.setColor(new Color(200,200,200,200));
+		g.fillRect(W - 110, H - 70, 90, 40);
+		g.fillRect(W - 110, H - 4 * PART  -0, 90, 40);
+		g.setColor(new Color(205,00,205)); 
 		g.drawString("" + priceRange.x, W - 100, H - 55);
 		g.drawString("" + priceRange.y, W - 100, H - 4 * PART + 15);
 
+		g.setColor(new Color(205,100,100));
+		g.drawString("" + volRange.x, W - 100, H - 40);
+		g.drawString("" + volRange.y, W - 100, H - 4 * PART + 30);
 		g.setColor(Color.blue);
 		for (GeneralPath indi : indicies) {
 			g.draw(indi);
@@ -498,7 +503,7 @@ public class ProfileCanvas extends JPanel {
 		int ct = 0;
 		for (String someWords : lines) {
 
-			g.drawString(someWords, 15, 50 + ct++ * (FONT_SIZE + 6));
+			g.drawString(someWords, 150, 50 + ct++ * (FONT_SIZE + 6));
 		}
 		g.setFont(original);
 	}

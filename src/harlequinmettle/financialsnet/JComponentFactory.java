@@ -242,15 +242,18 @@ public class JComponentFactory {
 					return;
 				yes.setSelected(false);
 				yes.setEnabled(false);
-				JScrollPanelledPane filesTab = JComponentFactory
-						.doHtmlTickerFilesTab();
-
-				EarningsTest.singleton.gui.add("Earnings Reports", filesTab);
+				addReportsTab();
 			}
 		};
 	}
+public static void addReportsTab(){
 
-	protected static void startLoadingDataBase() {
+	JScrollPanelledPane filesTab = JComponentFactory
+			.doHtmlTickerFilesTab();
+
+	EarningsTest.singleton.gui.add("Earnings Reports", filesTab);
+}
+	public static void startLoadingDataBase() {
 		Thread loadDB = new Thread(new Runnable() {
 
 			@Override

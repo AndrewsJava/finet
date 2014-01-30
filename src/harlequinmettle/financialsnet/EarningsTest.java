@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.TreeMap;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -59,8 +60,16 @@ public class EarningsTest {
 	final CustomButton buttonBrowseDownloadsFiles = JComponentFactory
 			.doPathBrowseButton(PATH_DOWNLOADS);
 
-	static final TreeMap<String, File> MAP_TO_FILES = new TreeMap<String, File>();
 	
+	final JCheckBox autoLoad = new JCheckBox("automatically load database");
+	
+
+	final JLabel daysToDownload = JComponentFactory
+			.doJLabel("number of days to request expected reports: ");
+	static final JTextArea DAYS_OF_REPORTS = JComponentFactory.doJTextArea();
+	
+	static final TreeMap<String, File> MAP_TO_FILES = new TreeMap<String, File>();
+
 	static EarningsTest singleton;
 
 	public static void main(String[] args) throws Exception {
@@ -88,9 +97,12 @@ public class EarningsTest {
 	private void setUpTabs() {
 		PATH_SOURCE.setText(programSettings.rootPathToTextDatabase);
 		PATH_DOWNLOADS.setText(programSettings.rootPathToDownloads);
+		 DAYS_OF_REPORTS.setText(""+programSettings.daysOfReportsToDownload);
 		gui.removeAll();
 		JScrollPanelledPane appTab = setUpControlsTab();
-		gui.add("controlls", appTab);
+		gui.add("controlls", appTab);		 
+  	JComponentFactory.addReportsTab();
+	 
 
 	}
 
@@ -107,12 +119,14 @@ public class EarningsTest {
 
 	private void addTextStatLauncherPanel(JScrollPanelledPane stepScroll) {
 		JPanel textExplor = JComponentFactory
-		.makePanel(JComponentFactory.HORIZONTAL);
-  
-		textExplor.add(JComponentFactory.makeTextExplorerLauchButton("Explor Text Stats" ));
-stepScroll.addComp(textExplor);
+				.makePanel(JComponentFactory.HORIZONTAL);
+
+		textExplor.add(JComponentFactory
+				.makeTextExplorerLauchButton("Explor Text Stats"));
+		stepScroll.addComp(textExplor);
 	}
-		private void addBasicControlls(JScrollPanelledPane stepScroll) {
+
+	private void addBasicControlls(JScrollPanelledPane stepScroll) {
 
 		final CustomButton buttonRefresh = new CustomButton("refresh");
 		final CustomButton buttonSave = new CustomButton("save");
@@ -129,8 +143,11 @@ stepScroll.addComp(textExplor);
 				"get next earnings set");
 		buttonGatherNextEarningsReports
 				.addActionListener(makeGatherNextSetButtonListener());
+
+	 
+		 
 		stepScroll.addComp(JComponentFactory
-				.generatePanel(buttonGatherNextEarningsReports));
+				.generatePanel(daysToDownload ,DAYS_OF_REPORTS,buttonGatherNextEarningsReports));
 	}
 
 	private ActionListener makeMoveFilesButtonListener() {
@@ -175,10 +192,21 @@ stepScroll.addComp(textExplor);
 
 		JPanel dbLoad = JComponentFactory
 				.makePanel(JComponentFactory.HORIZONTAL);
-
+		CustomButton loadDB = JComponentFactory.makeLoadDatabaseButton(
+				"Load Database", confirmLoad);
+		if (programSettings.autoLoadDatabase) {
+			autoLoad.setSelected(true);
+			confirmLoad.setSelected(true);
+			confirmLoad.setEnabled(false);
+			loadDB.setEnabled(false);
+			JComponentFactory.startLoadingDataBase(); 
+		//	JComponentFactory.addReportsTab();
+		}else{ 
+			autoLoad.setSelected(false);
+		}
+		dbLoad.add(autoLoad);
 		dbLoad.add(confirmLoad);
-		dbLoad.add(JComponentFactory.makeLoadDatabaseButton("Load Database",
-				confirmLoad));
+		dbLoad.add(loadDB);
 		stepScroll.addComp(dbLoad);
 	}
 
@@ -224,7 +252,13 @@ stepScroll.addComp(textExplor);
 				programSettings.rootPathToTextDatabase = PATH_SOURCE.getText();
 
 				programSettings.rootPathToDownloads = PATH_DOWNLOADS.getText();
-
+				
+				programSettings.autoLoadDatabase = autoLoad.isSelected();
+try{
+				programSettings.daysOfReportsToDownload = Integer.parseInt(DAYS_OF_REPORTS.getText());
+}catch(Exception e){
+	
+}
 				MemoryManager.saveSettings();
 
 			}
@@ -305,7 +339,7 @@ stepScroll.addComp(textExplor);
 
 			calendar.setTime(new Date());
 
-			for (int i = 0; i < 14; i++) {
+			for (int i = 0; i < programSettings.daysOfReportsToDownload; i++) {
 				String date = dateFormatForUrl.format(calendar.getTime());
 				String dateFileFormat = dateFormatForFile.format(calendar
 						.getTime());
