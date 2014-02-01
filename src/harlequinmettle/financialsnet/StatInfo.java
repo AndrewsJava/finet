@@ -715,7 +715,9 @@ public int locationInHistogram(float f){
 
 		}
 		g.setColor(bcSub);
+		if(subsetStats != null && subsetStats.histoBars != null)
 		for (Rectangle2D.Float f : subsetStats.histoBars) {
+			if(f != null)
 			g.fill(f);
 
 		}
@@ -761,10 +763,10 @@ public int locationInHistogram(float f){
 	private void addNumbersToHistogram(Graphics2D g) {
 		g.setColor(Color.black);
 		g.draw(zeroPercent);
-		g.drawString(" " + gmin, nLim, gminVert);
-		g.drawString(" " + gmax, xLim, gmaxVert);
+//		g.drawString(" " + gmin, nLim, gminVert);
+//		g.drawString(" " + gmax, xLim, gmaxVert);
 		g.drawString(" " + emin, 15, frameH - 30);
-		g.drawString(" " + emin, frameW - 100, frameH - 30);
+		g.drawString(" " + emax, frameW - 100, frameH - 30);
 		if (false)
 			for (Entry<Point2D.Float, Integer> entr : displaySizes.entrySet()) {
 				g.drawString("" + entr.getValue(), entr.getKey().x,

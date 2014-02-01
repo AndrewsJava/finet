@@ -17,6 +17,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map.Entry;
@@ -153,9 +155,10 @@ public class JComponentFactory {
 				if (!Database.loaded)
 					return;
 				final JFrame jf = new JFrame(buttonTitle);
-				jf.setSize(1300,650);
+				jf.setSize(1300, 650);
 				final ArrayList<ProfileCanvas> theCanvasesToRescale = new ArrayList<ProfileCanvas>();
-				jf.addComponentListener(JComponentFactory.doWindowRescaleListener(theCanvasesToRescale));
+				jf.addComponentListener(JComponentFactory
+						.doWindowRescaleListener(theCanvasesToRescale));
 				jf.setVisible(true);
 				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				JTabbedPane compareTickers = new JTabbedPane();
@@ -163,19 +166,19 @@ public class JComponentFactory {
 				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
 						.get(a.getText()));
 
-//				for (Entry<String, File> ent : EarningsTest.MAP_TO_FILES
-//						.entrySet())
-//					System.out.println(ent.getKey() + "  --->" + ent.getValue());
+				// for (Entry<String, File> ent : EarningsTest.MAP_TO_FILES
+				// .entrySet())
+				// System.out.println(ent.getKey() + "  --->" + ent.getValue());
 				for (String s : tickers) {
 					int tickerLocation = Database.dbSet.indexOf(s);
-					if (tickerLocation > 0){
+					if (tickerLocation > 0) {
 						ProfileCanvas pc = new ProfileCanvas(buttonTitle,
-								tickerLocation, jf.getWidth(),jf.getHeight());
-//						ProfileCanvas pc = new ProfileCanvas(
-//								tickerLocation);
+								tickerLocation, jf.getWidth(), jf.getHeight());
+						// ProfileCanvas pc = new ProfileCanvas(
+						// tickerLocation);
 						theCanvasesToRescale.add(pc);
-						compareTickers.add(s, JComponentFactory
-								.makeJScrollPane(pc));
+						compareTickers.add(s,
+								JComponentFactory.makeJScrollPane(pc));
 					}
 				}
 			}
@@ -185,21 +188,18 @@ public class JComponentFactory {
 
 		return a;
 	}
- 
 
 	protected static ComponentAdapter doWindowRescaleListener(
 			final ArrayList<ProfileCanvas> theCanvasesToRescale) {
 		return new ComponentAdapter() {
 
-		 
 			@Override
 			public void componentResized(ComponentEvent arg0) {
-				for(ProfileCanvas pc : theCanvasesToRescale)
-				pc.rescaleCanvas(arg0.getComponent().getBounds().getSize());   
-				
+				for (ProfileCanvas pc : theCanvasesToRescale)
+					pc.rescaleCanvas(arg0.getComponent().getBounds().getSize());
+
 			}
- 
-			
+
 		};
 	}
 
@@ -209,7 +209,7 @@ public class JComponentFactory {
 		try {
 			String fromFile = FileUtils.readFileToString(htmlFile);
 			getTickersFrom = fromFile.replaceAll("\\s+", "").split("q\\?s=");
-		 
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -238,7 +238,7 @@ public class JComponentFactory {
 			public void actionPerformed(ActionEvent arg0) {
 				if (yes.isSelected())
 					startLoadingDataBase();
-				else 
+				else
 					return;
 				yes.setSelected(false);
 				yes.setEnabled(false);
@@ -246,13 +246,14 @@ public class JComponentFactory {
 			}
 		};
 	}
-public static void addReportsTab(){
 
-	JScrollPanelledPane filesTab = JComponentFactory
-			.doHtmlTickerFilesTab();
+	public static void addReportsTab() {
 
-	EarningsTest.singleton.gui.add("Earnings Reports", filesTab);
-}
+		JScrollPanelledPane filesTab = JComponentFactory.doHtmlTickerFilesTab();
+
+		EarningsTest.singleton.gui.add("Earnings Reports", filesTab);
+	}
+
 	public static void startLoadingDataBase() {
 		Thread loadDB = new Thread(new Runnable() {
 
@@ -441,7 +442,7 @@ public static void addReportsTab(){
 				JScrollPane compareTickers = JComponentFactory
 						.makeTextScroll(wordStat);
 				jf.add(compareTickers);
-				
+
 				TreeMap<Integer, ArrayList<String>> orderResults = new TreeMap<Integer, ArrayList<String>>();
 
 				for (Entry<String, Integer> ent : Database.WORD_STATS
@@ -456,12 +457,40 @@ public static void addReportsTab(){
 						orderResults.put(count, startArray);
 					}
 				}
-				for(Entry<Integer,ArrayList<String>> ent: orderResults.entrySet()){
-//	wordStat.append("\n\n"+ent.getKey()+"\n"+ent.getValue());
-					if(ent.getKey()>1600)
-						for(String s: ent.getValue())
-					wordStat.append("\""+s+"\" , ");
+				for (Entry<Integer, ArrayList<String>> ent : orderResults
+						.entrySet()) {
+					wordStat.append("\n\n" + ent.getKey() + "\n"
+							+ ent.getValue());
+
 				}
+				ArrayList<Float> avgs = new ArrayList<Float>();
+				ArrayList<Float> totals = new ArrayList<Float>();
+				for (String txt : Database.DESCRIPTIONS.values()) {
+					txt = txt.replaceAll("_", " ");
+					totals.add(  calculateWordRankTotal(txt));
+					avgs.add( calculateWordRankAverage(txt));
+				}
+				StatInfo totalStats = new StatInfo(totals);
+				StatInfo avgsStats = new StatInfo(avgs);
+			}
+			private float calculateWordRankTotal(String text) {
+				float rank = 0;
+				String[] words = Database.simplifyText(text).split(" ");
+				for (String word : words) {
+
+					rank += 1.0 / Database.WORD_STATS.get(word);
+				}
+				return rank;
+			}
+
+			private float calculateWordRankAverage(String text) {
+				float rank = 0;
+				String[] words = Database.simplifyText(text).split(" ");
+				for (String word : words) {
+
+					rank += 1.0 / Database.WORD_STATS.get(word);
+				}
+				return rank/ words.length;
 			}
 		}
 
@@ -469,5 +498,6 @@ public static void addReportsTab(){
 
 		return a;
 	}
+
 
 }
