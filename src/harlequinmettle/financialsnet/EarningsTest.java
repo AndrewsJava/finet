@@ -27,6 +27,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.NameFileComparator;
 
 public class EarningsTest {
+	//TODO: distribution of word rank
+	//TODO: save number of tickers/file  
+	//TODO: organize access to buttons/colorize
+	//TODO: limit dates/extend dates to expected report date
 	static ProgramSettings programSettings;
 	static Database db;
 	final String qTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download";
