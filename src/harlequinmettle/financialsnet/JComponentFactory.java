@@ -92,7 +92,7 @@ public class JComponentFactory {
 	public static JScrollPanelledPane doHtmlTickerFilesTab() {
 		JScrollPanelledPane stepScroll = new JScrollPanelledPane();
 
-		File dir = new File(EarningsTest.ROOT);
+		File dir = new File(EarningsTest.REPORTS_ROOT);
 		File[] files = dir.listFiles();
 		Arrays.sort(files);
 		for (int i = files.length - 1; i >= 0; i--) {
@@ -148,7 +148,8 @@ public class JComponentFactory {
 
 	public static CustomButton makeHtmlLoadButton(final String buttonTitle) {
 		final CustomButton a = new CustomButton(buttonTitle);
-
+		renameButton(a);
+		colorButton(a);
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -165,7 +166,8 @@ public class JComponentFactory {
 				jf.add(compareTickers);
 				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
 						.get(a.getText()));
-
+				saveTickerCount(buttonTitle, tickers.size());
+				renameButton(a);
 				// for (Entry<String, File> ent : EarningsTest.MAP_TO_FILES
 				// .entrySet())
 				// System.out.println(ent.getKey() + "  --->" + ent.getValue());
@@ -182,11 +184,61 @@ public class JComponentFactory {
 					}
 				}
 			}
+
+			private void saveTickerCount(String buttonTitle, int size) {
+				EarningsTest.singleton.programSettings.tickersPerFile.put(
+						buttonTitle, size);
+
+				MemoryManager.saveSettings();
+			}
 		}
 
 		);
 
 		return a;
+	}
+
+	private static void colorButton(CustomButton a) {
+		System.out.println(a.getText());
+		double fileDate = 0;
+		double earningsDate = 0;
+		if (!a.getText().contains("_"))
+			return;
+		try {
+			fileDate = Double.parseDouble(a.getText().split("_URL_")[0]);
+			earningsDate = EarningsTest.singleton.dateFormatForFile.parse(
+					a.getText().split("_URL_")[1]).getTime()/(24*3600*1000);
+		} catch (Exception e) {
+			System.out.println("NUMBERS ARE NOT OK");
+			return;
+		}
+
+		int color = 200;
+		System.out.println("NUMBERS ARE OK");
+		a.setBackground(new Color(color, color, color));
+//		if (earningsDate++ < EarningsTest.dayNumber()) {
+//			a.setBackground(new Color(color, color, color));
+//		}
+		System.out.println("earnings:  "+earningsDate +  " - - "+EarningsTest.dayNumber());
+		while ( earningsDate  <  EarningsTest.dayNumber() && color >= 0) {
+			
+			color -= 10;
+			if(color<0)color = 0;
+			earningsDate+=1;
+			System.out.println("earnings:  "+earningsDate);
+			System.out.println("COLOR:  "+color);
+			a.setBackground(new Color(color, color, color));
+		}
+	}
+
+	private static void renameButton(CustomButton a) {
+		if (getSavedCount(a.getText()) != null)
+			a.setText(a.getText() + "     (" + getSavedCount(a.getText()) + ")");
+	}
+
+	private static Integer getSavedCount(String buttonTitle) {
+		return EarningsTest.singleton.programSettings.tickersPerFile
+				.get(buttonTitle);
 	}
 
 	protected static ComponentAdapter doWindowRescaleListener(
@@ -467,12 +519,13 @@ public class JComponentFactory {
 				ArrayList<Float> totals = new ArrayList<Float>();
 				for (String txt : Database.DESCRIPTIONS.values()) {
 					txt = txt.replaceAll("_", " ");
-					totals.add(  calculateWordRankTotal(txt));
-					avgs.add( calculateWordRankAverage(txt));
+					totals.add(calculateWordRankTotal(txt));
+					avgs.add(calculateWordRankAverage(txt));
 				}
 				StatInfo totalStats = new StatInfo(totals);
 				StatInfo avgsStats = new StatInfo(avgs);
 			}
+
 			private float calculateWordRankTotal(String text) {
 				float rank = 0;
 				String[] words = Database.simplifyText(text).split(" ");
@@ -490,7 +543,7 @@ public class JComponentFactory {
 
 					rank += 1.0 / Database.WORD_STATS.get(word);
 				}
-				return rank/ words.length;
+				return rank / words.length;
 			}
 		}
 
@@ -498,6 +551,5 @@ public class JComponentFactory {
 
 		return a;
 	}
-
 
 }

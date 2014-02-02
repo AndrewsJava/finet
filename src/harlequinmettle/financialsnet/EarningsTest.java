@@ -42,7 +42,7 @@ public class EarningsTest {
 	final SimpleDateFormat dateFormatForUrl = new SimpleDateFormat("yyyyMMdd");
 	final ArrayList<File> rawHtmlData = new ArrayList<File>();
 	final String[] dow = { "DJI" };
-	static final String ROOT = "earningsReportsFiles" + File.separator;
+	static final String REPORTS_ROOT = "earningsReportsFiles" + File.separator;
 	final JFrame application = new JFrame("Financails Net");
 	final JTabbedPane gui = new JTabbedPane();
 	// final JCheckBox nasdaq = JComponentFactory.doJCheckbox("NASDAQ");
@@ -351,7 +351,7 @@ try{
 						+ date + ".html"; // /
 
 				try {
-					File htmlFile = new File(ROOT + dayNumber() + "_URL_"
+					File htmlFile = new File(REPORTS_ROOT + dayString() + "_URL_"
 							+ dateFileFormat + ".html");
 					FileUtils.copyURLToFile(new URL(earnings), htmlFile);
 					System.out.println(new SimpleDateFormat("EEE")
@@ -384,7 +384,7 @@ try{
 						+ date + ".html"; // /
 
 				try {
-					File htmlFile = new File(ROOT + dayNumber() + "_URL_"
+					File htmlFile = new File(REPORTS_ROOT + dayString() + "_URL_"
 							+ date + ".html");
 					FileUtils.copyURLToFile(new URL(earnings), htmlFile);
 					System.out.println(new SimpleDateFormat("EEE").format(days)
@@ -419,7 +419,7 @@ try{
 		//
 	}
 
-	public static String dayNumber() {
+	public static String dayString() {
 		double time = System.currentTimeMillis();
 		// convert to seconds
 		time /= 1000.0;
@@ -434,12 +434,27 @@ try{
 		//
 	}
 
+	public static double dayNumber() {
+		double time = System.currentTimeMillis();
+		// convert to seconds
+		time /= 1000.0;
+		// convert to hours
+		time /= 3600.0;
+		// to days
+		time /= 24.0;
+		// limit to one decimal place
+		time = (double) ((int) (time * 10) / 10.0);
+
+		return  time;
+		//
+	}
+
 	private void saveCurrentTickers() {
 
 		try {
-			FileUtils.copyURLToFile(new URL(qTickerDownloadSite), new File(ROOT
+			FileUtils.copyURLToFile(new URL(qTickerDownloadSite), new File(REPORTS_ROOT
 					+ fileTitle("NASDAq")));
-			FileUtils.copyURLToFile(new URL(yTickerDownloadSite), new File(ROOT
+			FileUtils.copyURLToFile(new URL(yTickerDownloadSite), new File(REPORTS_ROOT
 					+ fileTitle("NySE")));
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
