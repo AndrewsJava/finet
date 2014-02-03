@@ -97,11 +97,10 @@ public class JComponentFactory {
 		Arrays.sort(files);
 		for (int i = files.length - 1; i >= 0; i--) {
 			File f = files[i];
-			CustomButton eb = JComponentFactory.makeHtmlLoadButton(f.getName());
+			JPanel eb = JComponentFactory.makeHtmlLoadPanel(f.getName());
 
 			EarningsTest.MAP_TO_FILES.put(f.getName(), f);
 
-			eb.setHorizontalAlignment(SwingConstants.LEFT);
 			stepScroll.addComp(eb);
 
 		}
@@ -146,16 +145,76 @@ public class JComponentFactory {
 		return a;
 	}
 
-	public static CustomButton makeHtmlLoadButton(final String buttonTitle) {
-		final CustomButton a = new CustomButton(buttonTitle);
-		renameButton(a);
+	public static String extractDate(String fullTitle) { 
+		if (!fullTitle.contains("_URL_"))
+			return "incompatible text";
+		String dateTitle = fullTitle.replaceAll(".html", "").split("_URL_")[1];
+		return dateTitle;
+	}
+
+	public static String reformatTitle(String fullTitle) { 
+		if (!fullTitle.contains("_URL_"))
+			return "incompatible text";
+		String dateTitle = fullTitle.replaceAll(".html", "").replaceAll("_URL_"," ");
+		return dateTitle;
+	}
+
+	public static JPanel makeHtmlLoadPanel(final String buttonTitle) {
+		final JPanel tickerButtonContainer = JComponentFactory
+				.makePanel(HORIZONTAL); 
+		final CustomButton a = new CustomButton(reformatTitle(buttonTitle));
+		tickerButtonContainer.add(a);
+		a.setHorizontalAlignment(SwingConstants.LEFT);
+		// //////
+		// renameButton(a);
 		colorButton(a);
+		addTabBuildingListener(a);
+		ArrayList<String> tickers = getTickersFound(a.getText());
+		if (tickers != null) {
+			for (String s : tickers) {
+				System.out.println(s);
+				tickerButtonContainer.add(JComponentFactory
+						.doIndividualTickerButton(s, buttonTitle));
+			}
+			for (int i = 0; i < EarningsTest.singleton.programSettings.maxSize
+					- tickers.size(); i++) {
+				tickerButtonContainer.add(new CustomButton("XXXX"));
+			}
+		}
+		renameButton(a);
+		return tickerButtonContainer;
+	}
+
+	private static CustomButton doIndividualTickerButton(final String s,
+			final String buttonData) {
+		final CustomButton a = new CustomButton(s);
+		a.setPreferredSize(new Dimension(60, 20));
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				final JFrame jf = new JFrame(a.getText());
+				jf.setSize(1300, 650);
+				jf.setVisible(true);
+				int tickerLocation = Database.dbSet.indexOf(s);
+				ProfileCanvas pc = new ProfileCanvas(buttonData,
+						tickerLocation, jf.getWidth(), jf.getHeight());
+				jf.addComponentListener(JComponentFactory
+						.doWindowRescaleListener(pc));
+				jf.add(JComponentFactory.makeJScrollPane(pc));
+			}
+
+		});
+		return a;
+	}
+
+	private static void addTabBuildingListener(final CustomButton a) {
+
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				if (!Database.loaded)
 					return;
-				final JFrame jf = new JFrame(buttonTitle);
+				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				final ArrayList<ProfileCanvas> theCanvasesToRescale = new ArrayList<ProfileCanvas>();
 				jf.addComponentListener(JComponentFactory
@@ -165,16 +224,14 @@ public class JComponentFactory {
 				JTabbedPane compareTickers = new JTabbedPane();
 				jf.add(compareTickers);
 				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
-						.get(a.getText()));
-				saveTickerCount(buttonTitle, tickers.size());
-				renameButton(a);
-				// for (Entry<String, File> ent : EarningsTest.MAP_TO_FILES
-				// .entrySet())
-				// System.out.println(ent.getKey() + "  --->" + ent.getValue());
+						.get(redoFileFormat(a.getText())));
+				saveTickerCount(a.getText(), tickers.size());
+				ArrayList<String> actual = new ArrayList<String>();
 				for (String s : tickers) {
 					int tickerLocation = Database.dbSet.indexOf(s);
 					if (tickerLocation > 0) {
-						ProfileCanvas pc = new ProfileCanvas(buttonTitle,
+						actual.add(s);
+						ProfileCanvas pc = new ProfileCanvas(a.getText(),
 								tickerLocation, jf.getWidth(), jf.getHeight());
 						// ProfileCanvas pc = new ProfileCanvas(
 						// tickerLocation);
@@ -183,6 +240,23 @@ public class JComponentFactory {
 								JComponentFactory.makeJScrollPane(pc));
 					}
 				}
+				saveUseableTicker(a.getText(), actual);
+				renameButton(a);
+			}
+
+			private void saveUseableTicker(String buttonTitle,
+					ArrayList<String> tickers) {
+				EarningsTest.singleton.programSettings.tickersPerFileInDatabase
+						.put(buttonTitle, tickers.size());
+				EarningsTest.singleton.programSettings.tickersActual.put(
+						buttonTitle, tickers);
+				isSaveMax(tickers.size());
+				MemoryManager.saveSettings();
+			}
+
+			private void isSaveMax(int size) {
+				if (size > EarningsTest.singleton.programSettings.maxSize)
+					EarningsTest.singleton.programSettings.maxSize = size;
 			}
 
 			private void saveTickerCount(String buttonTitle, int size) {
@@ -194,49 +268,64 @@ public class JComponentFactory {
 		}
 
 		);
+	}
 
-		return a;
+	protected static String redoFileFormat(String text) {
+	 
+		return text.replaceAll(" ", "_URL_").concat(".html");
 	}
 
 	private static void colorButton(CustomButton a) {
-		System.out.println(a.getText());
+
 		double fileDate = 0;
 		double earningsDate = 0;
 		if (!a.getText().contains("_"))
 			return;
 		try {
-			fileDate = Double.parseDouble(a.getText().split("_URL_")[0]);
+			fileDate = Double.parseDouble(a.getText().split(" ")[0]);
 			earningsDate = EarningsTest.singleton.dateFormatForFile.parse(
-					a.getText().split("_URL_")[1]).getTime()/(24*3600*1000);
+					a.getText().split(" ")[1]).getTime()
+					/ (24 * 3600 * 1000);
 		} catch (Exception e) {
-			System.out.println("NUMBERS ARE NOT OK");
 			return;
 		}
-
-		int color = 200;
-		System.out.println("NUMBERS ARE OK");
-		a.setBackground(new Color(color, color, color));
-//		if (earningsDate++ < EarningsTest.dayNumber()) {
-//			a.setBackground(new Color(color, color, color));
-//		}
-		System.out.println("earnings:  "+earningsDate +  " - - "+EarningsTest.dayNumber());
-		while ( earningsDate  <  EarningsTest.dayNumber() && color >= 0) {
-			
-			color -= 10;
-			if(color<0)color = 0;
-			earningsDate+=1;
-			System.out.println("earnings:  "+earningsDate);
-			System.out.println("COLOR:  "+color);
+		int color = 70;
+		if (earningsDate < EarningsTest.dayNumber()) {
 			a.setBackground(new Color(color, color, color));
+		} else {
+			color = 130;
+			double today = EarningsTest.dayNumber();
+			while (today < earningsDate && color >= 0) {
+
+				color += 10;
+				if (color > 255)
+					color = 255;
+				today += 2;
+			}
+			a.setBackground(new Color(100, 100, color));
 		}
 	}
 
 	private static void renameButton(CustomButton a) {
-		if (getSavedCount(a.getText()) != null)
-			a.setText(a.getText() + "     (" + getSavedCount(a.getText()) + ")");
+		String newName = a.getText();
+		if (getCountAll(a.getText()) != null)
+			newName += "     (" + getCountAll(a.getText()) + ")";
+		if (getCountMatch(a.getText()) != null)
+			newName += "     (" + getCountMatch(a.getText()) + ")";
+
+		a.setText(newName);
 	}
 
-	private static Integer getSavedCount(String buttonTitle) {
+	private static ArrayList<String> getTickersFound(String text) {
+		return EarningsTest.singleton.programSettings.tickersActual.get(text);
+	}
+
+	private static Integer getCountMatch(String text) {
+		return EarningsTest.singleton.programSettings.tickersPerFileInDatabase
+				.get(text);
+	}
+
+	private static Integer getCountAll(String buttonTitle) {
 		return EarningsTest.singleton.programSettings.tickersPerFile
 				.get(buttonTitle);
 	}
@@ -255,8 +344,24 @@ public class JComponentFactory {
 		};
 	}
 
+	protected static ComponentAdapter doWindowRescaleListener(
+			final ProfileCanvas pc) {
+		return new ComponentAdapter() {
+
+			@Override
+			public void componentResized(ComponentEvent arg0) {
+
+				pc.rescaleCanvas(arg0.getComponent().getBounds().getSize());
+
+			}
+		};
+	}
+
 	private static ArrayList<String> parseFileForTickers(File htmlFile) {
+
 		ArrayList<String> tickers = new ArrayList<String>();
+		if (htmlFile == null)
+			return tickers;
 		String[] getTickersFrom = { "   " };
 		try {
 			String fromFile = FileUtils.readFileToString(htmlFile);

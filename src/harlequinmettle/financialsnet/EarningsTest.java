@@ -10,11 +10,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -37,6 +36,7 @@ public class EarningsTest {
 	final String yTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nyse&render=download";
 	final Calendar calendar = Calendar.getInstance();
 	final TreeMap<String, String> rawMap = new TreeMap<String, String>();
+	final TreeMap<String, String> buttonNamingWorkaround = new TreeMap<String, String>();
 	final SimpleDateFormat dateFormatForFile = new SimpleDateFormat(
 			"yyyy_MM_dd");
 	final SimpleDateFormat dateFormatForUrl = new SimpleDateFormat("yyyyMMdd");
@@ -96,6 +96,8 @@ public class EarningsTest {
 
 		application.add(gui);
 		setUpTabs();
+		for(Entry<String,ArrayList<String>> x: EarningsTest.singleton.programSettings.tickersActual.entrySet())
+			System.out.println(x);
 	}
 
 	private void setUpTabs() {

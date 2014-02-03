@@ -18,7 +18,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -175,15 +177,17 @@ public class ProfileCanvas extends JPanel {
 	}
 
 	private void setDateLines(String dateInfo) {
-		String[] dates = dateInfo.replaceAll(".html", "").split("_URL_");
+		String[] dates = dateInfo.replaceAll(".html", "").split(" ");
+		if(dates.length<2)
+			return;
 		try {
 			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
 					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
-			int collectionDate =  (int) Double.parseDouble(dates[0]);
+			int collectionDate = (int) Double.parseDouble(dates[0]);
 			int index = 0;
 			for (Entry<Float, float[]> ent : technicals.entrySet()) {
 				int datePt = (int) (float) ent.getKey();
-				System.out.println(" comparison   (actual) (match)   : "+datePt +"    ==    "+earningsReportDate);
+
 				if (earningsReportDate == datePt) {
 					earnDateX = convertIndexToScreenPoint(index);
 				}
@@ -192,18 +196,20 @@ public class ProfileCanvas extends JPanel {
 				}
 				index++;
 			}
-			System.out.println("\n\nearnings report date : "+earningsReportDate);
-			System.out.println("collection date      : "+collectionDate);
+			System.out.println("\n\nearnings report date : "
+					+ earningsReportDate);
+			System.out.println("collection date      : " + collectionDate);
 		} catch (ParseException e) {
-			System.out.println("DATE PARSE ERROR   : "+Arrays.toString(dates));
+			System.out
+					.println("DATE PARSE ERROR   : " + Arrays.toString(dates));
 
 		}
 	}
 
 	private int convertIndexToScreenPoint(int index) {
-		int screenPoint =  (int) (index * generalInterval + 2 * BUFFER);
-		System.out.println("\n\nindex in map: "+index);
-		System.out.println("converted to screen : "+screenPoint);
+		int screenPoint = (int) (index * generalInterval + 2 * BUFFER);
+		System.out.println("\n\nindex in map: " + index);
+		System.out.println("converted to screen : " + screenPoint);
 		return screenPoint;
 	}
 
@@ -228,7 +234,8 @@ public class ProfileCanvas extends JPanel {
 		borders[number] = border;
 
 		int offset = 0;
-		for (StatInfo stat : Database.statistics) {
+		 List<StatInfo> statList = Collections.synchronizedList(Database.statistics);
+		for (StatInfo stat :statList) {
 			// compare these companies values to statistics
 			Rectangle2D.Float[] histog = setUpBars(stat.histogram, offset);
 			histos.add(histog);
@@ -458,19 +465,19 @@ public class ProfileCanvas extends JPanel {
 		g.setColor(Color.orange);
 		for (Rectangle2D.Float v : volume) {
 			g.draw(v);
-		} 
+		}
 
 		g.setColor(Color.magenta);
 		g.draw(pricePath);
 
-		g.setColor(new Color(200,200,200,200));
+		g.setColor(new Color(200, 200, 200, 200));
 		g.fillRect(W - 110, H - 70, 90, 40);
-		g.fillRect(W - 110, H - 4 * PART  -0, 90, 40);
-		g.setColor(new Color(205,00,205)); 
+		g.fillRect(W - 110, H - 4 * PART - 0, 90, 40);
+		g.setColor(new Color(205, 00, 205));
 		g.drawString("" + priceRange.x, W - 100, H - 55);
 		g.drawString("" + priceRange.y, W - 100, H - 4 * PART + 15);
 
-		g.setColor(new Color(205,100,100));
+		g.setColor(new Color(205, 100, 100));
 		g.drawString("" + volRange.x, W - 100, H - 40);
 		g.drawString("" + volRange.y, W - 100, H - 4 * PART + 30);
 		g.setColor(Color.blue);
@@ -483,7 +490,7 @@ public class ProfileCanvas extends JPanel {
 
 	private void drawDateLines(Graphics2D g) {
 		g.setColor(Color.green);
-		g.drawLine(x  ,0, x, H);
+		g.drawLine(x, 0, x, H);
 		g.setColor(Color.gray);
 		g.drawLine(collectionDateX, 0, collectionDateX, H);
 		g.setColor(Color.white);
@@ -566,7 +573,10 @@ public class ProfileCanvas extends JPanel {
 
 			rank += 1.0 / Database.WORD_STATS.get(word);
 		}
-		return new BigDecimal(rank / words.length).round(new MathContext(3))
+		double value = rank / words.length;
+		if(value != value ||   Double.isInfinite(value))
+			value = 0;
+		return new BigDecimal(value).round(new MathContext(3))
 				.doubleValue();
 	}
 }

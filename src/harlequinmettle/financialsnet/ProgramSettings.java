@@ -1,6 +1,7 @@
 package harlequinmettle.financialsnet;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class ProgramSettings implements Serializable {
@@ -12,8 +13,11 @@ public class ProgramSettings implements Serializable {
 	public String rootPathToDownloads = "";
 	public int daysOfReportsToDownload = 20;// includes weekends/holidays
 	public boolean autoLoadDatabase = false; 
-	
+
 	public TreeMap<String, Integer> tickersPerFile = new TreeMap<String, Integer>();
+	public TreeMap<String, Integer> tickersPerFileInDatabase = new TreeMap<String, Integer>();
+	public TreeMap<String, ArrayList<String>> tickersActual = new TreeMap<String, ArrayList<String>>();
+	public int maxSize = 0;
 	 
 	public ProgramSettings() { }
 

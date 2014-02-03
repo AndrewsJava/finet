@@ -230,7 +230,7 @@ public class Database implements Qi, Yi, DBLabels {
 				valid++;
 			}
 		}
-		System.out.println("SUMMING GIVES :   " + sum);
+		//System.out.println("SUMMING GIVES :   " + sum);
 		return sum / valid;
 	}
 
