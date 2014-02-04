@@ -566,7 +566,7 @@ public class ProfileCanvas extends JPanel {
 		return new BigDecimal(rank).round(new MathContext(3)).doubleValue();
 	}
 
-	private double calculateWordRankAverage(String text) {
+	public static  double calculateWordRankAverage(String text) {
 		double rank = 0;
 		String[] words = Database.simplifyText(text).split(" ");
 		for (String word : words) {

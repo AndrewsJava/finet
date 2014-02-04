@@ -145,23 +145,24 @@ public class JComponentFactory {
 		return a;
 	}
 
-	public static String extractDate(String fullTitle) { 
+	public static String extractDate(String fullTitle) {
 		if (!fullTitle.contains("_URL_"))
 			return "incompatible text";
 		String dateTitle = fullTitle.replaceAll(".html", "").split("_URL_")[1];
 		return dateTitle;
 	}
 
-	public static String reformatTitle(String fullTitle) { 
+	public static String reformatTitle(String fullTitle) {
 		if (!fullTitle.contains("_URL_"))
 			return "incompatible text";
-		String dateTitle = fullTitle.replaceAll(".html", "").replaceAll("_URL_"," ");
+		String dateTitle = fullTitle.replaceAll(".html", "").replaceAll(
+				"_URL_", " ");
 		return dateTitle;
 	}
 
 	public static JPanel makeHtmlLoadPanel(final String buttonTitle) {
 		final JPanel tickerButtonContainer = JComponentFactory
-				.makePanel(HORIZONTAL); 
+				.makePanel(HORIZONTAL);
 		final CustomButton a = new CustomButton(reformatTitle(buttonTitle));
 		tickerButtonContainer.add(a);
 		a.setHorizontalAlignment(SwingConstants.LEFT);
@@ -189,13 +190,15 @@ public class JComponentFactory {
 			final String buttonData) {
 		final CustomButton a = new CustomButton(s);
 		a.setPreferredSize(new Dimension(60, 20));
+	final 	int tickerLocation = Database.dbSet.indexOf(s);
+		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
+		addButtonDetails(a, marketCap,tickerLocation);
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setVisible(true);
-				int tickerLocation = Database.dbSet.indexOf(s);
 				ProfileCanvas pc = new ProfileCanvas(buttonData,
 						tickerLocation, jf.getWidth(), jf.getHeight());
 				jf.addComponentListener(JComponentFactory
@@ -203,10 +206,39 @@ public class JComponentFactory {
 				jf.add(JComponentFactory.makeJScrollPane(pc));
 			}
 
+
 		});
 		return a;
 	}
 
+	private static void addButtonDetails(CustomButton a, double marketCap, int tLoc) {
+
+		int i = 0;
+		while (marketCap > 1000) {
+			i++;
+			marketCap /= 1000;
+		}
+		String title = a.getText();
+		title += " " + (int) marketCap;
+		switch (i) {
+		case 1:
+			title += "K";
+			break;
+		case 2:
+			title += "M";
+			break;
+		case 3:
+			title += "B";
+			break;
+		case 4:
+			title += "T";
+		}
+		String t = Database.DESCRIPTIONS.get(Database.dbSet.get(tLoc))
+				.replaceAll("_", " "); 
+		int rankAverage =(int)(1000* ProfileCanvas.calculateWordRankAverage(t));
+		title+="  ("+rankAverage+")";
+		a.setText(title);
+	}
 	private static void addTabBuildingListener(final CustomButton a) {
 
 		a.addActionListener(new ActionListener() {
@@ -271,7 +303,7 @@ public class JComponentFactory {
 	}
 
 	protected static String redoFileFormat(String text) {
-	 
+
 		return text.replaceAll(" ", "_URL_").concat(".html");
 	}
 
@@ -416,8 +448,12 @@ public class JComponentFactory {
 
 			@Override
 			public void run() {
-				EarningsTest.db = new Database(
-						EarningsTest.PATH_SOURCE.getText());
+
+				if (!Database.loaded)
+					EarningsTest.db = new Database(
+							EarningsTest.PATH_SOURCE.getText());
+
+				JComponentFactory.addReportsTab();
 			}
 
 		});

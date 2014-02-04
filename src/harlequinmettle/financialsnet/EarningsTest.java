@@ -107,7 +107,6 @@ public class EarningsTest {
 		gui.removeAll();
 		JScrollPanelledPane appTab = setUpControlsTab();
 		gui.add("controlls", appTab);		 
-  	JComponentFactory.addReportsTab();
 	 
 
 	}
