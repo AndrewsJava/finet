@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -97,7 +98,7 @@ public class JComponentFactory {
 		Arrays.sort(files);
 		for (int i = files.length - 1; i >= 0; i--) {
 			File f = files[i];
-			JPanel eb = JComponentFactory.makeHtmlLoadPanel(f.getName());
+			CustomButton eb = JComponentFactory.makeHtmlLoadButton(f.getName());
 
 			EarningsTest.MAP_TO_FILES.put(f.getName(), f);
 
@@ -160,58 +161,108 @@ public class JComponentFactory {
 		return dateTitle;
 	}
 
-	public static JPanel makeHtmlLoadPanel(final String buttonTitle) {
-		final JPanel tickerButtonContainer = JComponentFactory
-				.makePanel(HORIZONTAL);
+	public static CustomButton makeHtmlLoadButton(final String buttonTitle) {
+
 		final CustomButton a = new CustomButton(reformatTitle(buttonTitle));
-		tickerButtonContainer.add(a);
+
 		a.setHorizontalAlignment(SwingConstants.LEFT);
 		// //////
 		// renameButton(a);
 		colorButton(a);
-		addTabBuildingListener(a);
+		//addTabBuildingListener(a);
+		addButtonChoosePanelBuilderListener(a);
 		ArrayList<String> tickers = getTickersFound(a.getText());
-		if (tickers != null) {
-			for (String s : tickers) {
-				System.out.println(s);
-				tickerButtonContainer.add(JComponentFactory
-						.doIndividualTickerButton(s, buttonTitle));
-			}
-			for (int i = 0; i < EarningsTest.singleton.programSettings.maxSize
-					- tickers.size(); i++) {
-				tickerButtonContainer.add(new CustomButton("XXXX"));
-			}
-		}
+
 		renameButton(a);
-		return tickerButtonContainer;
+		return a;
+	}
+
+	private static void addButtonChoosePanelBuilderListener(final CustomButton a) {
+
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (!Database.loaded)
+					return;
+				final JFrame jf = new JFrame(a.getText());
+				jf.setSize(1300, 650);
+				jf.setVisible(true);
+				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
+				JScrollPanelledPane stepScroll = new JScrollPanelledPane();
+				jf.add(stepScroll);
+				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
+						.get(redoFileFormat(a.getText())));
+				saveTickerCount(a.getText(), tickers.size());
+				ArrayList<String> actual = new ArrayList<String>();
+				for (String s : tickers) {
+					int tickerLocation = Database.dbSet.indexOf(s);
+					if (tickerLocation > 0) {
+						actual.add(s);
+						CustomButton tickerButton = JComponentFactory
+								.doIndividualTickerButtonForPanel(s, a.getText(),jf);
+						stepScroll.addComp(
+							 (tickerButton));
+					}
+				}
+			}
+			// saveUseableTicker(a.getText(), actual);
+
+		});
 	}
 
 	private static CustomButton doIndividualTickerButton(final String s,
 			final String buttonData) {
 		final CustomButton a = new CustomButton(s);
 		a.setPreferredSize(new Dimension(60, 20));
-	final 	int tickerLocation = Database.dbSet.indexOf(s);
+		final int tickerLocation = Database.dbSet.indexOf(s);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
-		addButtonDetails(a, marketCap,tickerLocation);
+		addButtonDetails(a, marketCap, tickerLocation);
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setVisible(true);
-				ProfileCanvas pc = new ProfileCanvas(buttonData,
+				ProfileCanvas pc = new ProfileCanvas(reformatTitle(buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
+
 				jf.addComponentListener(JComponentFactory
 						.doWindowRescaleListener(pc));
 				jf.add(JComponentFactory.makeJScrollPane(pc));
 			}
 
+		});
+		return a;
+	}
+
+	private static CustomButton doIndividualTickerButtonForPanel(final String s,
+			final String buttonData, final JFrame closeMe) {
+		final CustomButton a = new CustomButton(s);
+		a.setPreferredSize(new Dimension(60, 20));
+		final int tickerLocation = Database.dbSet.indexOf(s);
+		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
+		addButtonDetails(a, marketCap, tickerLocation);
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				final JFrame jf = new JFrame(a.getText());
+				jf.setSize(1300, 650);
+				jf.setVisible(true);
+				ProfileCanvas pc = new ProfileCanvas(reformatTitle(buttonData),
+						tickerLocation, jf.getWidth(), jf.getHeight());
+
+				jf.addComponentListener(JComponentFactory
+						.doWindowRescaleListener(pc));
+				jf.add(JComponentFactory.makeJScrollPane(pc));
+				closeMe.dispose();
+			}
 
 		});
 		return a;
 	}
 
-	private static void addButtonDetails(CustomButton a, double marketCap, int tLoc) {
+	private static void addButtonDetails(CustomButton a, double marketCap,
+			int tLoc) {
 
 		int i = 0;
 		while (marketCap > 1000) {
@@ -234,11 +285,13 @@ public class JComponentFactory {
 			title += "T";
 		}
 		String t = Database.DESCRIPTIONS.get(Database.dbSet.get(tLoc))
-				.replaceAll("_", " "); 
-		int rankAverage =(int)(1000* ProfileCanvas.calculateWordRankAverage(t));
-		title+="  ("+rankAverage+")";
+				.replaceAll("_", " ");
+		int rankAverage = (int) (1000 * ProfileCanvas
+				.calculateWordRankAverage(t));
+		title += "  (" + rankAverage + ")";
 		a.setText(title);
 	}
+
 	private static void addTabBuildingListener(final CustomButton a) {
 
 		a.addActionListener(new ActionListener() {
@@ -302,9 +355,24 @@ public class JComponentFactory {
 		);
 	}
 
-	protected static String redoFileFormat(String text) {
+	private void isSaveMax(int size) {
+		if (size > EarningsTest.singleton.programSettings.maxSize)
+			EarningsTest.singleton.programSettings.maxSize = size;
+	}
 
-		return text.replaceAll(" ", "_URL_").concat(".html");
+	private static void saveTickerCount(String buttonTitle, int size) {
+		EarningsTest.singleton.programSettings.tickersPerFile.put(buttonTitle,
+				size);
+
+		MemoryManager.saveSettings();
+	}
+
+	protected static String redoFileFormat(String text) {
+		String[] dates = text.split(" ");
+		if (dates.length < 2)
+			return "invalid format";
+		else
+			return dates[0] + "_URL_" + dates[1] + ".html";
 	}
 
 	private static void colorButton(CustomButton a) {

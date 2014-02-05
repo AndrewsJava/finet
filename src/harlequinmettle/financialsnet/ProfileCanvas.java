@@ -177,9 +177,14 @@ public class ProfileCanvas extends JPanel {
 	}
 
 	private void setDateLines(String dateInfo) {
-		String[] dates = dateInfo.replaceAll(".html", "").split(" ");
-		if(dates.length<2)
+		String[] dates = dateInfo.split(" ");
+		if(dates.length<2){
+			System.out.println("\n\nARRAY IS SHORT : "
+					+ dateInfo +"  -->  "+Arrays.toString(dates));
 			return;
+		}
+		System.out.println("\n data : "
+				+ dateInfo +"  -->  "+Arrays.toString(dates));
 		try {
 			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
 					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
