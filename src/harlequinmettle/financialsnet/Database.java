@@ -27,6 +27,10 @@ public class Database implements Qi, Yi, DBLabels {
 	public static final JTextField[] HIGHS = new JTextField[FIELD_COUNT];
 	public static final TreeMap<Float, float[][]> DB_ARRAY = new TreeMap<Float, float[][]>();
 	public static final TreeMap<Float, float[][]> DB_SUP = new TreeMap<Float, float[][]>();
+	
+	public static final TreeMap< String,TreeMap<Float, float[]>> TECHNICAL_PRICE_DATA = new  TreeMap<String,TreeMap<Float, float[]>>();
+	public static final TreeMap<Float, float[]> SUM_MARKET_PRICE_DATA = new TreeMap<Float, float[]>();
+	
 	public static final TreeMap<Float, float[][][]> DB_PRICES = new TreeMap<Float, float[][][]>();
 
 	public static final TreeMap<Float, Float> MARKETCHANGE = new TreeMap<Float, Float>();
@@ -79,6 +83,7 @@ public class Database implements Qi, Yi, DBLabels {
 		loadDatabaseWithData("");
 		calculateChanges();
 		computeSuplementalFactors();
+		fillTechnicals();
 		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
 			SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
 			String formated = sdf.format(new Date(
@@ -103,12 +108,30 @@ public class Database implements Qi, Yi, DBLabels {
 
 	}
 
+	private void fillTechnicals() {
+		
+for(String s: dbSet)
+		TECHNICAL_PRICE_DATA.put(s, new TreeMap<Float,float[]>()	);
+
+		for (float[][][] tech : Database.DB_PRICES.values()) {
+			for(int id = 0; id<tech.length; id++){ 
+			for (int i = 0; i < tech[id].length; i++) {
+				
+				TECHNICAL_PRICE_DATA	.get(dbSet.get(id)).put(tech[id][i][0], tech[id][i]);
+			}
+
+
+		}
+		}
+	}
+
 	public Database(String root) {
 		SystemMemoryUsage smu = new SystemMemoryUsage();
 		dbSet = new ArrayList<String>(Arrays.asList(concat(QQ, YY)));
 		loadDatabaseWithData(root);
 		calculateChanges();
 		computeSuplementalFactors();
+		fillTechnicals();
 		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
 			SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
 			String formated = sdf.format(new Date(
@@ -524,22 +547,7 @@ public class Database implements Qi, Yi, DBLabels {
 		// in volume
 
 	}
-
-	public Database(int loadOption) {
-		switch (loadOption) {
-		case LOAD_NASDAQ:
-
-			break;
-		case LOAD_NYSE:
-
-			break;
-		case LOAD_BOTH:
-
-			break;
-		default:
-			break;
-		}
-	}
+ 
 
 	// cycle through DB_ARRAY check each weeks data and construct int->(tickers)
 	// that meet criteria

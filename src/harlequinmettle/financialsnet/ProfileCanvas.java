@@ -88,6 +88,7 @@ public class ProfileCanvas extends JPanel {
 	String dateInfo = "";
 
 	public ProfileCanvas(int id) {
+		technicals =  Database.TECHNICAL_PRICE_DATA.get(Database.dbSet.get(id)	);
 		addMouseListener(dateDisplayer);
 		tickerID = id;
 		setTextDescriptionInArray();
@@ -133,13 +134,13 @@ public class ProfileCanvas extends JPanel {
 		// "close",//4
 		// "volume",//5
 		// "adjClose",//6
-		for (float[][][] tech : Database.DB_PRICES.values()) {
-			for (int i = 0; i < tech[id].length; i++) {
-				// map date factor to days price/vol data
-				technicals.put(tech[id][i][0], tech[id][i]);
-			}
-
-		}
+//		for (float[][][] tech : Database.DB_PRICES.values()) {
+//			for (int i = 0; i < tech[id].length; i++) {
+//				// map date factor to days price/vol data
+//				technicals.put(tech[id][i][0], tech[id][i]);
+//			}
+//
+//		}
 		pricePath = createPricePath(technicals);
 		volume = createVolumeBars(technicals);
 		for (int i = 0; i < DBLabels.labels.length; i++) {
@@ -154,6 +155,7 @@ public class ProfileCanvas extends JPanel {
 	}
 
 	public ProfileCanvas(String dateInfo, int id, int width, int height) {
+		technicals =  Database.TECHNICAL_PRICE_DATA.get(Database.dbSet.get(id)	);
 		addMouseListener(dateDisplayer);
 		tickerID = id;
 		this.dateInfo = dateInfo;
@@ -165,13 +167,13 @@ public class ProfileCanvas extends JPanel {
 
 		}
 
-		for (float[][][] tech : Database.DB_PRICES.values()) {
-			for (int i = 0; i < tech[id].length; i++) {
-
-				technicals.put(tech[id][i][0], tech[id][i]);
-			}
-
-		}
+//		for (float[][][] tech : Database.DB_PRICES.values()) {
+//			for (int i = 0; i < tech[id].length; i++) {
+//
+//				technicals.put(tech[id][i][0], tech[id][i]);
+//			}
+//
+//		}
 
 		rescaleCanvas(new Dimension(width, height));
 	}
