@@ -58,7 +58,7 @@ public class ProfileCanvas extends JPanel {
 	public static Color[] scalesR = new Color[nColors];
 	public static Color[] scalesB = new Color[nColors];
 	public int[] comp = new int[DBLabels.labels.length];
-	private GeneralPath pricePath;
+	private GeneralPath pricePath= new GeneralPath();;
 	static {
 		for (int i = 0; i < nColors; i++) {
 			scalesR[i] = new Color(10 + 10 * i, 20, 20);// shades of red
@@ -88,7 +88,7 @@ public class ProfileCanvas extends JPanel {
 	String dateInfo = "";
 
 	public ProfileCanvas(int id) {
-		technicals =  Database.TECHNICAL_PRICE_DATA.get(Database.dbSet.get(id)	);
+		technicals = Database.TECHNICAL_PRICE_DATA.get(Database.dbSet.get(id));
 		addMouseListener(dateDisplayer);
 		tickerID = id;
 		setTextDescriptionInArray();
@@ -134,13 +134,13 @@ public class ProfileCanvas extends JPanel {
 		// "close",//4
 		// "volume",//5
 		// "adjClose",//6
-//		for (float[][][] tech : Database.DB_PRICES.values()) {
-//			for (int i = 0; i < tech[id].length; i++) {
-//				// map date factor to days price/vol data
-//				technicals.put(tech[id][i][0], tech[id][i]);
-//			}
-//
-//		}
+		// for (float[][][] tech : Database.DB_PRICES.values()) {
+		// for (int i = 0; i < tech[id].length; i++) {
+		// // map date factor to days price/vol data
+		// technicals.put(tech[id][i][0], tech[id][i]);
+		// }
+		//
+		// }
 		pricePath = createPricePath(technicals);
 		volume = createVolumeBars(technicals);
 		for (int i = 0; i < DBLabels.labels.length; i++) {
@@ -155,7 +155,7 @@ public class ProfileCanvas extends JPanel {
 	}
 
 	public ProfileCanvas(String dateInfo, int id, int width, int height) {
-		technicals =  Database.TECHNICAL_PRICE_DATA.get(Database.dbSet.get(id)	);
+		technicals = Database.TECHNICAL_PRICE_DATA.get(Database.dbSet.get(id));
 		addMouseListener(dateDisplayer);
 		tickerID = id;
 		this.dateInfo = dateInfo;
@@ -167,26 +167,26 @@ public class ProfileCanvas extends JPanel {
 
 		}
 
-//		for (float[][][] tech : Database.DB_PRICES.values()) {
-//			for (int i = 0; i < tech[id].length; i++) {
-//
-//				technicals.put(tech[id][i][0], tech[id][i]);
-//			}
-//
-//		}
+		// for (float[][][] tech : Database.DB_PRICES.values()) {
+		// for (int i = 0; i < tech[id].length; i++) {
+		//
+		// technicals.put(tech[id][i][0], tech[id][i]);
+		// }
+		//
+		// }
 
 		rescaleCanvas(new Dimension(width, height));
 	}
 
 	private void setDateLines(String dateInfo) {
 		String[] dates = dateInfo.split(" ");
-		if(dates.length<2){
-			System.out.println("\n\nARRAY IS SHORT : "
-					+ dateInfo +"  -->  "+Arrays.toString(dates));
+		if (dates.length < 2) {
+			System.out.println("\n\nARRAY IS SHORT : " + dateInfo + "  -->  "
+					+ Arrays.toString(dates));
 			return;
 		}
-		System.out.println("\n data : "
-				+ dateInfo +"  -->  "+Arrays.toString(dates));
+		System.out.println("\n data : " + dateInfo + "  -->  "
+				+ Arrays.toString(dates));
 		try {
 			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
 					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
@@ -241,8 +241,9 @@ public class ProfileCanvas extends JPanel {
 		borders[number] = border;
 
 		int offset = 0;
-		 List<StatInfo> statList = Collections.synchronizedList(Database.statistics);
-		for (StatInfo stat :statList) {
+		List<StatInfo> statList = Collections
+				.synchronizedList(Database.statistics);
+		for (StatInfo stat : statList) {
 			// compare these companies values to statistics
 			Rectangle2D.Float[] histog = setUpBars(stat.histogram, offset);
 			histos.add(histog);
@@ -253,14 +254,96 @@ public class ProfileCanvas extends JPanel {
 				comp[offset] = -10;
 			offset++;
 		}
-
-		pricePath = createPricePath(technicals);
+//  originally
+//		pricePath = createPricePath(technicals);
+//		volume = createVolumeBars(technicals);
+//		for (int i = 0; i < DBLabels.labels.length; i++) {
+//			indicies.add(makePathFromData(coData, i));
+//		}
+		ArrayList<Point2D.Float>  marketToStockPairing = pairPriceWithMarketByDate(6);
+		ArrayList<Float> stockPrices = makeListFromPricePair(marketToStockPairing,0);
+		pricePath = makePathFromData(stockPrices,1,4);
 		volume = createVolumeBars(technicals);
-		for (int i = 0; i < DBLabels.labels.length; i++) {
-			indicies.add(makePathFromData(coData, i));
+		 ArrayList<String> labelList =  new ArrayList<String>(Arrays.asList(DBLabels.labels));
+		for (int i = 0; i < DBLabels.priorityLabeling.length; i++) {
+			int ranking =  labelList.indexOf(DBLabels.priorityLabeling)-1;
+			if(ranking>=0)
+			indicies.add(makePathFromData(makeListFromPointInArray(coData,ranking),4+ranking, 1));
 		}
 
 		setDateLines(dateInfo);
+	}
+
+	private GeneralPath makePathFromData(ArrayList<Float> pts, int rank,
+			int segments) {
+	//	GeneralPath trend = new GeneralPath();
+
+		// /////////////////////
+		float minimumPt = new BigDecimal(min(pts)).round(new MathContext(3))
+				.floatValue();
+		float maximumPt = new BigDecimal(max(pts)).round(new MathContext(3))
+				.floatValue();
+		minsMax.add(new Point2D.Float(minimumPt, maximumPt));
+		// System.out.println("range: "+minimumPt+"   ---   "+maximumPt);
+		float range = maximumPt - minimumPt;
+		float localScale = (PART * segments) / range;
+		float graphInterval = (W - HORIZONTAL_MARGIN_TOTAL) / (pts.size() - 1);
+		int i = 0;
+		for (float f : pts) {
+			float xpt = 2 * BUFFER + graphInterval * i;
+
+			float ypt = BUFFER + rank * BUFFER + rank * PART + PART
+					- (localScale * (f - minimumPt));
+
+			if (i == 0) {
+				pricePath.moveTo(xpt, ypt);
+			} else {
+				pricePath.lineTo(xpt, ypt);
+			}
+			i++;
+		}
+
+		// /////////////////////
+		return pricePath;
+	}
+
+	private ArrayList<Float> makeListFromPointInArray(
+			ArrayList<float[]> coData, int id) {
+
+		ArrayList<Float> pts = new ArrayList<Float>();
+		for (float[] data : coData) {
+			pts.add(data[id]);
+		}
+		return pts;
+	}
+
+	//coordinate individual with total market
+	private ArrayList<Point2D.Float> pairPriceWithMarketByDate(int idPt) {
+		ArrayList<Point2D.Float> pricePoints = new ArrayList<Point2D.Float>();
+		for (Entry<Float, float[]> ent : technicals.entrySet()) {
+			Point2D.Float priceMatch = new Point2D.Float(ent.getValue()[idPt],
+					Database.SUM_MARKET_PRICE_DATA.get(ent.getKey())[idPt]);
+			pricePoints.add(priceMatch);
+		}
+		return pricePoints;
+	}
+
+	//coordinate individual with total market
+	private ArrayList<Float> makeListFromPricePair(
+			ArrayList<Point2D.Float> priceByDate, int id) {
+
+		ArrayList<Float> pts = new ArrayList<Float>();
+		for (Point2D.Float prices : priceByDate) {
+			switch (id) {
+			case 0:
+				pts.add(prices.x);
+				break;
+			case 1:
+				pts.add(prices.y);
+				break;
+			}
+		}
+		return pts;
 	}
 
 	private GeneralPath makePathFromData(ArrayList<float[]> coData, int id) {
@@ -322,7 +405,9 @@ public class ProfileCanvas extends JPanel {
 		float rectWidth = (W - HORIZONTAL_MARGIN_TOTAL) / tradeVol.size();
 		int i = 0;
 		for (float f : tradeVol) {
-			float top = (H - 30 - graphicsScale * f);
+			//float top = (H - 30 - graphicsScale * f);
+		//	float top = (4*PART+BUFFER - 30 - graphicsScale * f);
+			float top = ((BUFFER + 4 * BUFFER + 4 * PART  ) - 30 - graphicsScale * f);
 			float left = 2 * BUFFER + (rectWidth) * i;
 			float width = (rectWidth);
 			float height = (graphicsScale * f);
@@ -573,7 +658,7 @@ public class ProfileCanvas extends JPanel {
 		return new BigDecimal(rank).round(new MathContext(3)).doubleValue();
 	}
 
-	public static  double calculateWordRankAverage(String text) {
+	public static double calculateWordRankAverage(String text) {
 		double rank = 0;
 		String[] words = Database.simplifyText(text).split(" ");
 		for (String word : words) {
@@ -581,9 +666,8 @@ public class ProfileCanvas extends JPanel {
 			rank += 1.0 / Database.WORD_STATS.get(word);
 		}
 		double value = rank / words.length;
-		if(value != value ||   Double.isInfinite(value))
+		if (value != value || Double.isInfinite(value))
 			value = 0;
-		return new BigDecimal(value).round(new MathContext(3))
-				.doubleValue();
+		return new BigDecimal(value).round(new MathContext(3)).doubleValue();
 	}
 }

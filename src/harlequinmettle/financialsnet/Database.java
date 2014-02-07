@@ -109,22 +109,92 @@ public class Database implements Qi, Yi, DBLabels {
 	}
 
 	private void fillTechnicals() {
-
+ int better = 0;
+ int worse = 0;
 		for (String s : dbSet)
 			TECHNICAL_PRICE_DATA.put(s, new TreeMap<Float, float[]>());
 
 		for (float[][][] tech : Database.DB_PRICES.values()) {
 			for (int id = 0; id < tech.length; id++) {
 				for (int i = 0; i < tech[id].length; i++) {
-
+if(isDataBetter(tech,id,i)){
 					TECHNICAL_PRICE_DATA.get(dbSet.get(id)).put(tech[id][i][0],
 							tech[id][i]);
+					better++;
+}else{
+	worse++;
+}
 				}
 
 			}
 		}
+		Database.testNewCode();
+		System.out.println("\nbetter: "+better	);
+		System.out.println("\nworse: "+worse	);
+	}
+/////////////
+
+	private boolean isDataBetter(float[][][] tech,int id, int i) {
+
+		  float[]  technicals = TECHNICAL_PRICE_DATA.get(dbSet.get(id)).get(tech[id][i][0]);
+		  if(technicals == null)return true;
+		  int ok_old = 0;
+		  for(float f: technicals)
+			  if(f==f)ok_old++;
+
+		  int ok_new = 0;
+		  for(float f: tech[id][i])
+			  if(f==f)ok_new++;
+ 
+		  return (ok_new>ok_old);
+		 
 	}
 
+	private static void doMarketSum() {
+
+		for (TreeMap<Float, float[]> individual : Database.TECHNICAL_PRICE_DATA
+				.values()) {
+			addToMarketSum(individual);
+		}
+	}
+
+	private static void addToMarketSum(TreeMap<Float, float[]> individual) {
+		for (Entry<Float, float[]> ent : individual.entrySet()) {
+
+			float[] dayData = Database.SUM_MARKET_PRICE_DATA.get(ent.getKey());
+			if (dayData == null) {
+				Database.SUM_MARKET_PRICE_DATA.put(ent.getKey(),
+						new float[ent.getValue().length]);
+			}
+			addIndividualDataToMarketSum(ent);
+		}
+	}
+
+	private static void addIndividualDataToMarketSum(Entry<Float, float[]> ent) {
+		float[] dayData = Database.SUM_MARKET_PRICE_DATA.get(ent.getKey());
+//		System.out.println("A: "+Arrays.toString(dayData)	);
+		for (int i = 0; i < ent.getValue().length; i++) {
+			if (ent.getValue()[i] == ent.getValue()[i])
+				dayData[i] += ent.getValue()[i];
+		}
+	//	System.out.println( "B: "+Arrays.toString(Database.SUM_MARKET_PRICE_DATA.get(ent.getKey()))	);
+	}
+	public static void testNewCode(){
+		long startTime = System.currentTimeMillis();
+
+		System.out.println(Database.SUM_MARKET_PRICE_DATA.size()	);
+		
+		doMarketSum();
+		System.out.println(Database.SUM_MARKET_PRICE_DATA.size()	);
+		for(Entry<Float,float[]> allPts: Database.SUM_MARKET_PRICE_DATA.entrySet())
+		System.out.println(allPts.getKey()+"  :=:  "+ Arrays.toString(allPts.getValue())+ "    ");
+		System.out.println("\ntime: "+formatTime(startTime)	);
+	}
+	private static String formatTime(long startTime) {
+		return (int)(System.currentTimeMillis()-startTime)/1000 +" seconds ";
+	}
+
+	////////////////
 	public Database(String root) {
 		SystemMemoryUsage smu = new SystemMemoryUsage();
 		dbSet = new ArrayList<String>(Arrays.asList(concat(QQ, YY)));
