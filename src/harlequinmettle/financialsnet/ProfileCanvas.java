@@ -28,19 +28,18 @@ import javax.swing.JPanel;
 
 public class ProfileCanvas extends JPanel {
 	SimpleDateFormat showDate = new SimpleDateFormat("YYYY-MMM-dd");
-	public Color bg = new Color(100, 180, 220);
-	public static final int BUFFER = 3;
+	public Color bg = new Color(100, 180, 220); 
 	public static final float HORIZONTAL_MARGIN_TOTAL = 70.0F;
-	public static final int PART = 150;
 	public static int W = 1400;
-	public static int H = DBLabels.labels.length * PART
-			+ DBLabels.labels.length * BUFFER + 4 * PART;
+	public static int H = DBLabels.labels.length * DataPointGraphic.PIXELS_HEIGHT
+			+ DBLabels.labels.length * DataPointGraphic.PIXELS_BORDER + 4 *  DataPointGraphic.PIXELS_HEIGHT;
 	public static final int FONT_SIZE = 30;
 	public static final Font BIG_FONT = new Font("Sans-Serif", Font.BOLD,
 			FONT_SIZE);
 	public static final Color TEXT_COLOR = new Color(120, 150, 220, 100);
+	
+	
 	public Rectangle2D.Float[] borders = new Rectangle2D.Float[DBLabels.labels.length + 1];
-	public ArrayList<Rectangle2D.Float[]> histos = new ArrayList<Rectangle2D.Float[]>();
 	public ArrayList<Rectangle2D.Float> volume = new ArrayList<Rectangle2D.Float>();
 	public ArrayList<Point2D.Float> minsMax = new ArrayList<Point2D.Float>();
 
@@ -53,18 +52,10 @@ public class ProfileCanvas extends JPanel {
 													// IN PAINT
 
 	public ArrayList<GeneralPath> indicies = new ArrayList<GeneralPath>();
-	private double barwidth = (W - HORIZONTAL_MARGIN_TOTAL) / StatInfo.nbars;
-	public static final int nColors = 20;
-	public static Color[] scalesR = new Color[nColors];
-	public static Color[] scalesB = new Color[nColors];
+  
 	public int[] comp = new int[DBLabels.labels.length];
-	private GeneralPath pricePath= new GeneralPath();;
-	static {
-		for (int i = 0; i < nColors; i++) {
-			scalesR[i] = new Color(10 + 10 * i, 20, 20);// shades of red
-			scalesB[i] = new Color(20, 20, 10 + 10 * i);// shades of
-		}
-	}
+	private GeneralPath pricePath= new GeneralPath();
+ 
 	int tickerID;
 	double date = 0;
 	double day = 0;
@@ -74,11 +65,9 @@ public class ProfileCanvas extends JPanel {
 
 		public void mouseClicked(MouseEvent e) {
 			x = e.getX();
-			y = e.getY();
-			// int index = (int) ((W - 2 * BUFFER) / (x - 2 * BUFFER) /
-			// generalInterval* technicals.size()) ;
-			int index = (int) ((x - 2 * BUFFER) / generalInterval);
-			day = (Float) technicals.keySet().toArray()[index] + 1;
+			y = e.getY(); 
+			int index = (int) ((x -  DataPointGraphic.PIXELS_BORDER) / generalInterval);
+			day = (Float) technicals.keySet().toArray()[index] ;
 			repaint();
 		}
 	};
@@ -94,22 +83,7 @@ public class ProfileCanvas extends JPanel {
 		setTextDescriptionInArray();
 		setPreferredSize(new Dimension(W, H));
 
-		for (int i = 0; i < DBLabels.labels.length; i++) {
-			Rectangle2D.Float border = new Rectangle2D.Float(BUFFER, BUFFER + i
-					* BUFFER + i * PART, W - HORIZONTAL_MARGIN_TOTAL, PART);
-			borders[i] = border;
-		}
-		int number = DBLabels.labels.length;
-		Rectangle2D.Float border = new Rectangle2D.Float(BUFFER, BUFFER
-				+ number * BUFFER + number * PART, W - HORIZONTAL_MARGIN_TOTAL,
-				4 * PART);
-		borders[number] = border;
-
-		for (float[][] allData : Database.DB_ARRAY.values()) {
-			// get all company data (all 87 pts) for each collected set
-			coData.add(allData[id]);//
-		}
-
+ 
 		int offset = 0;
 		for (StatInfo stat : Database.statistics) {
 			// compare these companies values to statistics
@@ -527,7 +501,7 @@ public class ProfileCanvas extends JPanel {
 					g.setColor(Color.white);
 				else
 
-					g.setColor(scalesB[11]);
+					g.setColor( new Color(20, 20, 10 + 10 * 11));
 				g.fill(bar);
 
 				j++;
@@ -537,7 +511,7 @@ public class ProfileCanvas extends JPanel {
 		int i = 0;
 		for (Rectangle2D.Float rf : borders) {
 
-			g.setColor(scalesB[19]);
+			g.setColor( new Color(20, 20, 10 + 10 *19));
 			g.draw(rf);
 
 			if (i == DBLabels.labels.length) {
