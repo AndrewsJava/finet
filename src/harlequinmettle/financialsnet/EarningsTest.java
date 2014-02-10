@@ -84,6 +84,9 @@ public class EarningsTest {
 		// TODO: use/display company descriptions
 		// TODO: add dates to price/volume graph
 		// TODO: merge idential files / double gae output
+		File resources = new File(REPORTS_ROOT);
+		if(!resources.exists())
+			resources.mkdir();
 		singleton = this;
 		programSettings = MemoryManager.restoreSettings();
 		// JFrame
@@ -106,9 +109,7 @@ public class EarningsTest {
 		 DAYS_OF_REPORTS.setText(""+programSettings.daysOfReportsToDownload);
 		gui.removeAll();
 		JScrollPanelledPane appTab = setUpControlsTab();
-		gui.add("controlls", appTab);		 
-	 
-
+		gui.add("controlls", appTab);		  
 	}
 
 	private JScrollPanelledPane setUpControlsTab() {

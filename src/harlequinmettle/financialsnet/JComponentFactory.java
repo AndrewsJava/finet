@@ -163,15 +163,12 @@ public class JComponentFactory {
 
 	public static CustomButton makeHtmlLoadButton(final String buttonTitle) {
 
-		final CustomButton a = new CustomButton(reformatTitle(buttonTitle));
-
-		a.setHorizontalAlignment(SwingConstants.LEFT);
-		// //////
-		// renameButton(a);
+		final CustomButton a = new CustomButton(reformatTitle(buttonTitle)); 
+		a.setHorizontalAlignment(SwingConstants.LEFT); 
 		colorButton(a);
 		//addTabBuildingListener(a);
 		addButtonChoosePanelBuilderListener(a);
-		ArrayList<String> tickers = getTickersFound(a.getText());
+	//	ArrayList<String> tickers = getTickersFound(a.getText());
 
 		renameButton(a);
 		return a;
@@ -248,13 +245,13 @@ public class JComponentFactory {
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setVisible(true);
+				closeMe.dispose();
 				ProfileCanvas pc = new ProfileCanvas(reformatTitle(buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
 
 				jf.addComponentListener(JComponentFactory
 						.doWindowRescaleListener(pc));
 				jf.add(JComponentFactory.makeJScrollPane(pc));
-				closeMe.dispose();
 			}
 
 		});

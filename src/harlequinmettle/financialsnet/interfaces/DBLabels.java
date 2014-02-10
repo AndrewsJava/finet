@@ -2,6 +2,10 @@ package harlequinmettle.financialsnet.interfaces;
 
 public interface DBLabels {
 	String[] priorityLabeling = {
+			//a hack but im using if for now minimum rank 2 because first one is technical data
+			"",//
+			"",//
+		 
 			"Market Cap", // 0
 			"52-Week Change",// 30
 			"50-Day Moving Average",// ///////-----------69
