@@ -59,7 +59,7 @@ public class ProfileCanvas extends JPanel {
 		public void mouseClicked(MouseEvent e) {
 			x = e.getX();
 			y = e.getY();
-			int index = (int) ((x - DataPointGraphic.PIXELS_BORDER) / generalInterval);
+			int index = (int) ((x - DataPointGraphic.PIXELS_BORDER) / DataPointGraphic.rectWidth);
 			day = (Float) technicals.keySet().toArray()[index];
 			repaint();
 		}

@@ -20,29 +20,37 @@ public class DataPointGraphic {
 	public static final int PIXELS_TOP = 30;
 	public static final int PIXELS_BORDER = 3;
 	public static final int PIXELS_HEIGHT = 150;
+	
 	public static Color COLOR_HISTOGRAM_BAR_THIS =  new Color( 200,200,200,150);
 	public static Color COLOR_HISTOGRAM_BAR =  new Color( 100,100,250,150 );
 	public static Color COLOR_HISTOGRAM_BAR_VOL =  new Color(255, 195, 30,150);
 	// previously histos
 	private ArrayList<Rectangle2D.Float> bars;
+	
 	private Rectangle2D.Float border;
+	
 	private Point2D.Float minMaxLine = new Point2D.Float(0, 0);
 	private Point2D.Float minMaxBars = new Point2D.Float(0, 0);
 	private Point2D.Float minMaxHisto = new Point2D.Float(0, 0);
+	
 	private GeneralPath timePath;
+	
 	private String category = "";
+	private int categoryId;
+	
 	private String ticker = "";
-	private int heightFactor = 1;
-	private int rank = 0;
-	private int id = 0;
+	private int id;
+	
+	private int verticalSizeInt = 1;
+	private int reorderRanking;
 	// sum rank*heightFactor for each object created;
 	public static int graphicRank = 0;
-	private int categoryId = 0;
 	private float barwidth = (ProfileCanvas.W - 2 * PIXELS_BORDER)
 			/ StatInfo.nbars;
 	private boolean general = true;
 	ArrayList<float[]> timeSeriesCompayData = new ArrayList<float[]>();
 	float top, left;
+	public static int rectWidth;
 
 	// TreeMap<Float, float[]> technicals;
 
@@ -51,7 +59,7 @@ public class DataPointGraphic {
 	}
 
 	public DataPointGraphic(String category, String ticker, int heightFactor) {
-		this.heightFactor = heightFactor;
+		this.verticalSizeInt = heightFactor;
 		general = false;
 		init(category, ticker);
 
@@ -63,16 +71,16 @@ public class DataPointGraphic {
 
 		id = Database.dbSet.indexOf(ticker);
 		List list = Arrays.asList(DBLabels.priorityLabeling);
-		this.rank = list.indexOf(category2);
+		this.reorderRanking = list.indexOf(category2);
 
 		list = Arrays.asList(DBLabels.labels);
 		this.categoryId = list.indexOf(category2);
 
 		if (general) {
-			graphicRank += heightFactor * (rank );
+			graphicRank += verticalSizeInt ;
 			setUpGeneralGraphData();
 		} else {
-			graphicRank += heightFactor * (1);
+			graphicRank += verticalSizeInt * (1);
 			setUpTechnicalsGraphData();
 		}
 		top = PIXELS_BORDER + graphicRank * PIXELS_BORDER + graphicRank
@@ -82,8 +90,19 @@ public class DataPointGraphic {
 		border = new Rectangle2D.Float(PIXELS_BORDER, PIXELS_BORDER
 				+ graphicRank * PIXELS_BORDER + graphicRank * PIXELS_HEIGHT,
 				ProfileCanvas.W - 2 * PIXELS_BORDER, PIXELS_HEIGHT
-						* heightFactor);
+						* verticalSizeInt);
+		System.out.println(this);
 	}
+
+	@Override
+	public String toString() {
+ 
+		return "\n reorderRanking: "+reorderRanking+//
+				"\n category: "+category+//
+				"\n verticalSizeInt: "+verticalSizeInt+//
+				"\n graphciRank: "+graphicRank+//
+				"\n top: "+top;
+				}
 
 	private void setMinMaxHistogramHighlight() {
 
@@ -139,7 +158,7 @@ public class DataPointGraphic {
 	public ArrayList<Rectangle2D.Float> setUpBars(int[] histogram) {
 		int max = maxBar(histogram);
 		ArrayList<Rectangle2D.Float> histoBars = new ArrayList<Rectangle2D.Float>();
-		float graphicsScale = ((float) PIXELS_HEIGHT * heightFactor) / max;
+		float graphicsScale = ((float) PIXELS_HEIGHT * verticalSizeInt) / max;
 		for (int i = 0; i < StatInfo.nbars; i++) {
 
 			int top = PIXELS_BORDER
@@ -147,7 +166,7 @@ public class DataPointGraphic {
 					* graphicRank
 					+ PIXELS_HEIGHT
 					* graphicRank
-					+ (PIXELS_HEIGHT * heightFactor - (int) (graphicsScale * histogram[i]));
+					+ (PIXELS_HEIGHT * verticalSizeInt - (int) (graphicsScale * histogram[i]));
 			int left = PIXELS_BORDER + (int) (barwidth) * i;
 			int width = (int) (barwidth);
 			int height = (int) (graphicsScale * histogram[i]);
@@ -230,7 +249,7 @@ public class DataPointGraphic {
 		minMaxLine = new Point2D.Float(minimumPt, maximumPt);
 		// System.out.println("range: "+minimumPt+"   ---   "+maximumPt);
 		float range = maximumPt - minimumPt;
-		float localScale = (PIXELS_HEIGHT * heightFactor) / range;
+		float localScale = (PIXELS_HEIGHT * verticalSizeInt) / range;
 		float graphInterval = (ProfileCanvas.W - PIXELS_BORDER * 2)
 				/ (pts.size() - 1);
 		int i = 0;
@@ -296,8 +315,8 @@ public class DataPointGraphic {
 		float maximumPt = roundTo(max(tradeVol), 3);
 		minMaxBars = new Point2D.Float(minimumPt, maximumPt);
 
-		float graphicsScale = (PIXELS_HEIGHT * heightFactor) / max;
-		float rectWidth = (ProfileCanvas.W - PIXELS_BORDER * 2)
+		float graphicsScale = (PIXELS_HEIGHT * verticalSizeInt) / max;
+		  rectWidth = (ProfileCanvas.W - PIXELS_BORDER * 2)
 				/ tradeVol.size();
 		int i = 0;
 		for (float f : tradeVol) {
