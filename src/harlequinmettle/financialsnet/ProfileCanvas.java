@@ -154,9 +154,7 @@ public class ProfileCanvas extends JPanel {
 			System.out.println("\n\nearnings report date : "
 					+ earningsReportDate);
 			System.out.println("collection date      : " + collectionDate);
-		} catch (ParseException e) {
-			System.out
-					.println("DATE PARSE ERROR   : " + Arrays.toString(dates));
+		} catch (ParseException e) { 
 
 		}
 	}

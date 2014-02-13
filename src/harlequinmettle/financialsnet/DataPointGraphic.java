@@ -76,15 +76,16 @@ public class DataPointGraphic {
 		list = Arrays.asList(DBLabels.labels);
 		this.categoryId = list.indexOf(category2);
 
+		top = PIXELS_BORDER + graphicRank * PIXELS_BORDER + graphicRank
+				* PIXELS_HEIGHT;
+		
 		if (general) {
 			graphicRank += verticalSizeInt ;
 			setUpGeneralGraphData();
 		} else {
-			graphicRank += verticalSizeInt * (1);
+			graphicRank += verticalSizeInt  ;
 			setUpTechnicalsGraphData();
 		}
-		top = PIXELS_BORDER + graphicRank * PIXELS_BORDER + graphicRank
-				* PIXELS_HEIGHT;
 		left = PIXELS_BORDER;
 
 		border = new Rectangle2D.Float(PIXELS_BORDER, PIXELS_BORDER
@@ -98,7 +99,9 @@ public class DataPointGraphic {
 	public String toString() {
  
 		return "\n reorderRanking: "+reorderRanking+//
+				"\n ticker: "+ticker+//
 				"\n category: "+category+//
+				"\n min max line: "+minMaxLine+//
 				"\n verticalSizeInt: "+verticalSizeInt+//
 				"\n graphciRank: "+graphicRank+//
 				"\n top: "+top;
@@ -145,7 +148,7 @@ public class DataPointGraphic {
 
 		for (float[][] allData : Database.DB_ARRAY.values()) {
 			// get all company data (all 87 pts) for each collected set
-			timeSeriesCompayData.add(allData[categoryId]);//
+			timeSeriesCompayData.add(allData[id]);//
 
 		}
 
@@ -247,7 +250,7 @@ public class DataPointGraphic {
 		float minimumPt = roundTo(min(pts), 3);
 		float maximumPt = roundTo(max(pts), 3);
 		minMaxLine = new Point2D.Float(minimumPt, maximumPt);
-		// System.out.println("range: "+minimumPt+"   ---   "+maximumPt);
+		 System.out.println(category+" range: "+minimumPt+"   ---   "+maximumPt);
 		float range = maximumPt - minimumPt;
 		float localScale = (PIXELS_HEIGHT * verticalSizeInt) / range;
 		float graphInterval = (ProfileCanvas.W - PIXELS_BORDER * 2)
