@@ -20,37 +20,37 @@ public class DataPointGraphic {
 	public static final int PIXELS_TOP = 30;
 	public static final int PIXELS_BORDER = 3;
 	public static final int PIXELS_HEIGHT = 150;
-	
-	public static Color COLOR_HISTOGRAM_BAR_THIS =  new Color( 200,200,200,150);
-	public static Color COLOR_HISTOGRAM_BAR =  new Color( 100,100,250,150 );
-	public static Color COLOR_HISTOGRAM_BAR_VOL =  new Color(255, 195, 30,150);
+
+	public static Color COLOR_HISTOGRAM_BAR_THIS = new Color(200, 200, 200, 150);
+	public static Color COLOR_HISTOGRAM_BAR = new Color(100, 100, 250, 150);
+	public static Color COLOR_HISTOGRAM_BAR_VOL = new Color(55, 95, 230, 100);
 	// previously histos
 	private ArrayList<Rectangle2D.Float> bars;
-	
+
 	private Rectangle2D.Float border;
-	
+
 	private Point2D.Float minMaxLine = new Point2D.Float(0, 0);
 	private Point2D.Float minMaxBars = new Point2D.Float(0, 0);
 	private Point2D.Float minMaxHisto = new Point2D.Float(0, 0);
-	
+
 	private GeneralPath timePath;
-	
+
 	private String category = "";
 	private int categoryId;
-	
+
 	private String ticker = "";
 	private int id;
-	
+	public static float timeScale;
 	private int verticalSizeInt = 1;
 	private int reorderRanking;
 	// sum rank*heightFactor for each object created;
 	public static int graphicRank = 0;
-	private float barwidth = (ProfileCanvas.W - 2 * PIXELS_BORDER)
-			/ StatInfo.nbars;
+	private float barwidth = (eWidth - 2 * PIXELS_BORDER) / StatInfo.nbars;
 	private boolean general = true;
 	ArrayList<float[]> timeSeriesCompayData = new ArrayList<float[]>();
 	float top, left;
-	public static int rectWidth;
+	public static float rectWidth;
+	public static float eWidth;
 
 	// TreeMap<Float, float[]> technicals;
 
@@ -68,7 +68,9 @@ public class DataPointGraphic {
 	private void init(String category2, String ticker2) {
 		this.category = category2;
 		this.ticker = ticker2;
-
+		 
+		timeSeriesCompayData.clear();
+		eWidth = ProfileCanvas.W - 40;
 		id = Database.dbSet.indexOf(ticker);
 		List list = Arrays.asList(DBLabels.priorityLabeling);
 		this.reorderRanking = list.indexOf(category2);
@@ -78,34 +80,33 @@ public class DataPointGraphic {
 
 		top = PIXELS_BORDER + graphicRank * PIXELS_BORDER + graphicRank
 				* PIXELS_HEIGHT;
-		
-		if (general) {
-			graphicRank += verticalSizeInt ;
-			setUpGeneralGraphData();
-		} else {
-			graphicRank += verticalSizeInt  ;
-			setUpTechnicalsGraphData();
-		}
-		left = PIXELS_BORDER;
 
+		left = PIXELS_BORDER;
 		border = new Rectangle2D.Float(PIXELS_BORDER, PIXELS_BORDER
 				+ graphicRank * PIXELS_BORDER + graphicRank * PIXELS_HEIGHT,
-				ProfileCanvas.W - 2 * PIXELS_BORDER, PIXELS_HEIGHT
-						* verticalSizeInt);
-		System.out.println(this);
+				eWidth - 2 * PIXELS_BORDER, PIXELS_HEIGHT * verticalSizeInt);
+		if (general) {
+			graphicRank += verticalSizeInt;
+			setUpGeneralGraphData();
+		} else {
+			graphicRank += verticalSizeInt;
+			setUpTechnicalsGraphData();
+		}
+
+		//System.out.println(this);
 	}
 
 	@Override
 	public String toString() {
- 
-		return "\n reorderRanking: "+reorderRanking+//
-				"\n ticker: "+ticker+//
-				"\n category: "+category+//
-				"\n min max line: "+minMaxLine+//
-				"\n verticalSizeInt: "+verticalSizeInt+//
-				"\n graphciRank: "+graphicRank+//
-				"\n top: "+top;
-				}
+
+		return "\n reorderRanking: " + reorderRanking + //
+				"\n ticker: " + ticker + //
+				"\n category: " + category + //
+				"\n min max line: " + minMaxLine + //
+				"\n verticalSizeInt: " + verticalSizeInt + //
+				"\n graphciRank: " + graphicRank + //
+				"\n top: " + top;
+	}
 
 	private void setMinMaxHistogramHighlight() {
 
@@ -115,7 +116,10 @@ public class DataPointGraphic {
 		}
 		float min = min(variations);
 		float max = max(variations);
-
+		if ((int)(min * 1e7 )== -1)
+			min = Float.NaN;
+		if ((int)(max * 1e7 )== -1)
+			max = Float.NaN;
 		if (min == min)
 			minMaxHisto.x = Database.statistics.get(categoryId)
 					.locationInHistogram(min);
@@ -140,7 +144,7 @@ public class DataPointGraphic {
 				marketToStockPairing, 0);
 		bars = createVolumeBars(technicals);
 
-		timePath = new GeneralPath();
+		timePath = makePathFromData(stockPrices);
 	}
 
 	private void setUpGeneralGraphData() {
@@ -164,16 +168,12 @@ public class DataPointGraphic {
 		float graphicsScale = ((float) PIXELS_HEIGHT * verticalSizeInt) / max;
 		for (int i = 0; i < StatInfo.nbars; i++) {
 
-			int top = PIXELS_BORDER
-					+ PIXELS_BORDER
-					* graphicRank
-					+ PIXELS_HEIGHT
-					* graphicRank
-					+ (PIXELS_HEIGHT * verticalSizeInt - (int) (graphicsScale * histogram[i]));
-			int left = PIXELS_BORDER + (int) (barwidth) * i;
-			int width = (int) (barwidth);
-			int height = (int) (graphicsScale * histogram[i]);
-			histoBars.add(new Rectangle2D.Float(left, top, width, height));
+			float htop =   top
+					+ (PIXELS_HEIGHT * verticalSizeInt*1f -   (graphicsScale*1f * histogram[i]));
+			float left = PIXELS_BORDER +   (barwidth) * i;
+			float width = (int) (barwidth);
+			float height = (int) (graphicsScale * histogram[i]);
+			histoBars.add(new Rectangle2D.Float(left, htop, width, height));
 		}
 		return histoBars;
 	}
@@ -250,18 +250,18 @@ public class DataPointGraphic {
 		float minimumPt = roundTo(min(pts), 3);
 		float maximumPt = roundTo(max(pts), 3);
 		minMaxLine = new Point2D.Float(minimumPt, maximumPt);
-		 System.out.println(category+" range: "+minimumPt+"   ---   "+maximumPt);
+//		System.out.println(category + " range: " + minimumPt + "   ---   "
+//				+ maximumPt);
 		float range = maximumPt - minimumPt;
-		float localScale = (PIXELS_HEIGHT * verticalSizeInt) / range;
-		float graphInterval = (ProfileCanvas.W - PIXELS_BORDER * 2)
-				/ (pts.size() - 1);
+		  timeScale = (PIXELS_HEIGHT * verticalSizeInt) / range;
+	 
+		float graphInterval = (eWidth - PIXELS_BORDER * 2) / (pts.size() - 1);
 		int i = 0;
 		for (float f : pts) {
 			float xpt = 2 * PIXELS_BORDER + graphInterval * i;
 
-			float ypt = PIXELS_BORDER + graphicRank * PIXELS_BORDER
-					+ graphicRank * PIXELS_HEIGHT + PIXELS_HEIGHT
-					- (localScale * (f - minimumPt));
+			float ypt = top + PIXELS_HEIGHT * verticalSizeInt
+					- (timeScale * (f - minimumPt));
 
 			if (i == 0) {
 				trend.moveTo(xpt, ypt);
@@ -319,20 +319,17 @@ public class DataPointGraphic {
 		minMaxBars = new Point2D.Float(minimumPt, maximumPt);
 
 		float graphicsScale = (PIXELS_HEIGHT * verticalSizeInt) / max;
-		  rectWidth = (ProfileCanvas.W - PIXELS_BORDER * 2)
-				/ tradeVol.size();
+		rectWidth = (eWidth - PIXELS_BORDER * 2f) / tradeVol.size()*1f;
 		int i = 0;
 		for (float f : tradeVol) {
 			// float top = (H - 30 - graphicsScale * f);
 			// float top = (4*PART+BUFFER - 30 - graphicsScale * f);
 
-			float top = PIXELS_BORDER + PIXELS_BORDER * graphicRank
-					+ PIXELS_HEIGHT * graphicRank + PIXELS_HEIGHT * graphicRank
-					- graphicsScale * f;
+			float btop = top + PIXELS_HEIGHT * graphicRank - graphicsScale * f;
 			float left = PIXELS_BORDER + (rectWidth) * i;
 			float width = (rectWidth);
 			float height = (graphicsScale * f);
-			vol.add(new Rectangle2D.Float(left, top, width, height));
+			vol.add(new Rectangle2D.Float(left, btop, width, height));
 			i++;
 		}
 
@@ -340,8 +337,8 @@ public class DataPointGraphic {
 	}
 
 	public void rescale() {
-		graphicRank = 0;
-		// init(category, ticker);
+
+		init(category, ticker);
 	}
 
 	public void drawMe(Graphics2D g) {
@@ -357,7 +354,7 @@ public class DataPointGraphic {
 				g.setColor(COLOR_HISTOGRAM_BAR_VOL);
 			}
 			g.draw(bar);
-			  g.fill(bar);
+			g.fill(bar);
 			J++;
 		}
 		g.setColor(new Color(20, 20, 10 + 10 * 19));
@@ -366,9 +363,9 @@ public class DataPointGraphic {
 		g.setColor(Color.white);
 		g.drawString(category, left + PIXELS_BORDER, top + 15);
 
-		g.drawString("" + minMaxLine.x, ProfileCanvas.W - 100, top
-				+ PIXELS_HEIGHT - PIXELS_BORDER);
-		g.drawString("" + minMaxLine.y, ProfileCanvas.W - 100, top + 13);
+		g.drawString("" + minMaxLine.x, eWidth - 100, top + PIXELS_HEIGHT
+				- PIXELS_BORDER);
+		g.drawString("" + minMaxLine.y, eWidth - 100, top + 13);
 
 		if (general)
 			g.setColor(Color.blue);

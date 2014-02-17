@@ -51,8 +51,7 @@ public class ProfileCanvas extends JPanel {
 
 	int tickerID;
 	double date = 0;
-	double day = 0;
-	double generalInterval = 0;
+	double day = 0; 
 	int x, y;
 	final MouseAdapter dateDisplayer = new MouseAdapter() {
 
@@ -72,6 +71,7 @@ public class ProfileCanvas extends JPanel {
 		this.dateInfo = dateInfo;
 		init(id);
 		rescaleCanvas(new Dimension(width, height));
+		System.out.println("dateinfo: "+dateInfo);
 	}
 
 	public ProfileCanvas(int id) {
@@ -116,8 +116,9 @@ public class ProfileCanvas extends JPanel {
 	}
 	public void rescaleCanvas(Dimension dim) {
 		W = dim.width;
+		DataPointGraphic.graphicRank = 0;
 		rescaleAllDataPointGraphics();
-		 setPreferredSize(new Dimension(W, H));
+		 setPreferredSize(new Dimension(W, H+40));
 		setDateLines(dateInfo);
 	}
 
@@ -133,8 +134,10 @@ public class ProfileCanvas extends JPanel {
 					+ Arrays.toString(dates));
 			return;
 		}
-		System.out.println("\n data : " + dateInfo + "  -->  "
-				+ Arrays.toString(dates));
+		boolean collectionDataFound = false;
+		boolean earningsDateFound = false;
+//		System.out.println("\n data : " + dateInfo + "  -->  "
+//				+ Arrays.toString(dates));
 		try {
 			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
 					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
@@ -143,11 +146,15 @@ public class ProfileCanvas extends JPanel {
 			for (Entry<Float, float[]> ent : technicals.entrySet()) {
 				int datePt = (int) (float) ent.getKey();
 
-				if (earningsReportDate == datePt) {
+				if (!earningsDateFound && datePt > (int) earningsReportDate  ) {
+					earningsDateFound = true;
 					earnDateX = convertIndexToScreenPoint(index);
+					System.out.println("earnings date found "+datePt+"=="+earningsReportDate+"    >"+index);
 				}
-				if (collectionDate == datePt) {
+				if (!collectionDataFound && datePt >  collectionDate  ) {
+					collectionDataFound = true;
 					collectionDateX = convertIndexToScreenPoint(index);
+					System.out.println("collection date found "+datePt+"=="+collectionDate+"    >"+index);
 				}
 				index++;
 			}
@@ -160,7 +167,7 @@ public class ProfileCanvas extends JPanel {
 	}
 
 	private int convertIndexToScreenPoint(int index) {
-		int screenPoint = (int) (index * generalInterval + DataPointGraphic.PIXELS_BORDER);
+		int screenPoint = (int) (index * DataPointGraphic.rectWidth + DataPointGraphic.PIXELS_BORDER);
 		return screenPoint;
 	}
 
@@ -188,6 +195,9 @@ public class ProfileCanvas extends JPanel {
 		g.drawLine(collectionDateX, 0, collectionDateX, H);
 		g.setColor(Color.white);
 		g.drawLine(earnDateX, 0, earnDateX, H);
+		System.out.println("colectionDateX: "+collectionDateX);
+		System.out.println("earnDateX: "+earnDateX);
+		System.out.println("click pt: "+x);
 	}
 
 	private void drawTextInBackground(Graphics2D g) {

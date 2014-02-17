@@ -246,7 +246,7 @@ public class JComponentFactory {
 				jf.setSize(1300, 650);
 				jf.setVisible(true);
 				closeMe.dispose();
-				ProfileCanvas pc = new ProfileCanvas(reformatTitle(buttonData),
+				ProfileCanvas pc = new ProfileCanvas( (buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
 
 				jf.addComponentListener(JComponentFactory
@@ -476,7 +476,7 @@ public class JComponentFactory {
 					String ticker = s.substring(s.indexOf(">") + 1,
 							s.indexOf("<"));
 					tickers.add(ticker);
-					System.out.print(ticker + "    ");
+					//System.out.print(ticker + "    ");
 				}
 			} catch (Exception e) {
 				// System.err.println("error: "+s);
