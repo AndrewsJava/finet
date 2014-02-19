@@ -163,12 +163,12 @@ public class JComponentFactory {
 
 	public static CustomButton makeHtmlLoadButton(final String buttonTitle) {
 
-		final CustomButton a = new CustomButton(reformatTitle(buttonTitle)); 
-		a.setHorizontalAlignment(SwingConstants.LEFT); 
+		final CustomButton a = new CustomButton(reformatTitle(buttonTitle));
+		a.setHorizontalAlignment(SwingConstants.LEFT);
 		colorButton(a);
-		//addTabBuildingListener(a);
+		// addTabBuildingListener(a);
 		addButtonChoosePanelBuilderListener(a);
-	//	ArrayList<String> tickers = getTickersFound(a.getText());
+		// ArrayList<String> tickers = getTickersFound(a.getText());
 
 		renameButton(a);
 		return a;
@@ -184,7 +184,7 @@ public class JComponentFactory {
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setVisible(true);
-				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
+				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				JScrollPanelledPane stepScroll = new JScrollPanelledPane();
 				jf.add(stepScroll);
 				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
@@ -196,9 +196,9 @@ public class JComponentFactory {
 					if (tickerLocation > 0) {
 						actual.add(s);
 						CustomButton tickerButton = JComponentFactory
-								.doIndividualTickerButtonForPanel(s, a.getText(),jf);
-						stepScroll.addComp(
-							 (tickerButton));
+								.doIndividualTickerButtonForPanel(s,
+										a.getText(), jf);
+						stepScroll.addComp((tickerButton));
 					}
 				}
 			}
@@ -232,9 +232,9 @@ public class JComponentFactory {
 		return a;
 	}
 
-	private static CustomButton doIndividualTickerButtonForPanel(final String s,
-			final String buttonData, final JFrame closeMe) {
-		final CustomButton a = new CustomButton(s);
+	private static CustomButton doIndividualTickerButtonForPanel(
+			final String s, final String buttonData, final JFrame closeMe) {
+		final CustomButton a = new CustomButton((s));
 		a.setPreferredSize(new Dimension(60, 20));
 		final int tickerLocation = Database.dbSet.indexOf(s);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
@@ -242,11 +242,12 @@ public class JComponentFactory {
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setVisible(true);
 				closeMe.dispose();
-				ProfileCanvas pc = new ProfileCanvas( (buttonData),
+				ProfileCanvas pc = new ProfileCanvas((buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
 
 				jf.addComponentListener(JComponentFactory
@@ -260,32 +261,31 @@ public class JComponentFactory {
 
 	private static void addButtonDetails(CustomButton a, double marketCap,
 			int tLoc) {
-
-		int i = 0;
-		while (marketCap > 1000) {
-			i++;
-			marketCap /= 1000;
-		}
 		String title = a.getText();
-		title += " " + (int) marketCap;
-		switch (i) {
-		case 1:
-			title += "K";
-			break;
-		case 2:
-			title += "M";
-			break;
-		case 3:
-			title += "B";
-			break;
-		case 4:
-			title += "T";
+		for (int i = 10; i > title.length(); i--) {
+			title += " ";
 		}
+		String cap = (int) (marketCap / 1000000) + " M";
+
+		for (int i = 8; i > cap.length(); i--) {
+			title += " ";
+		}
+		title += cap;
 		String t = Database.DESCRIPTIONS.get(Database.dbSet.get(tLoc))
 				.replaceAll("_", " ");
 		int rankAverage = (int) (1000 * ProfileCanvas
 				.calculateWordRankAverage(t));
-		title += "  (" + rankAverage + ")";
+		if (rankAverage < 10) {
+			title += "     (0";
+		} else {
+			title += "     (";
+		}
+		title += rankAverage + ")";
+
+		for (int i = 30; i > title.length(); i--) {
+			title += " ";
+		}
+		title += "|";
 		a.setText(title);
 	}
 
@@ -476,7 +476,7 @@ public class JComponentFactory {
 					String ticker = s.substring(s.indexOf(">") + 1,
 							s.indexOf("<"));
 					tickers.add(ticker);
-					//System.out.print(ticker + "    ");
+					// System.out.print(ticker + "    ");
 				}
 			} catch (Exception e) {
 				// System.err.println("error: "+s);

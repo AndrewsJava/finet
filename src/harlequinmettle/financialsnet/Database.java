@@ -156,11 +156,30 @@ public class Database implements Qi, Yi, DBLabels {
 	}
 
 	private static void doMarketSum() {
-
-		for (TreeMap<Float, float[]> individual : Database.TECHNICAL_PRICE_DATA
-				.values()) {
-			addToMarketSum(individual);
+ArrayList<String> validDataTickers = new ArrayList<String>();
+		for (Entry<String,TreeMap<Float, float[]>> individual : Database.TECHNICAL_PRICE_DATA
+				.entrySet()) {
+			if(isAllDataValid(individual.getValue())){
+				validDataTickers.add(individual.getKey());
+			}
 		}
+		System.out.println("----------=====:::::::::>                         ----->)    "+validDataTickers.size());
+		for(String s: validDataTickers){
+		 
+			addToMarketSum( Database.TECHNICAL_PRICE_DATA.get(s));
+		}
+	}
+
+	private static boolean isAllDataValid(TreeMap<Float, float[]> value) {
+		for(float[] f: value.values()){
+			for(float f1: f){ 
+				if(f1!=f1) { 
+					return false;
+			 
+				}
+				}
+		}
+		return true;
 	}
 
 	private static void addToMarketSum(TreeMap<Float, float[]> individual) {

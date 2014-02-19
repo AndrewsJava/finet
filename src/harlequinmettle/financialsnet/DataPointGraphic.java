@@ -2,8 +2,11 @@ package harlequinmettle.financialsnet;
 
 import harlequinmettle.financialsnet.interfaces.DBLabels;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Stroke;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
@@ -24,6 +27,17 @@ public class DataPointGraphic {
 	public static final int PIXELS_HEIGHT = 150;
 	public static final int PERCENT_CHANGE_COMPARISON_RANGE_ABS = 20;
 
+	public static Color FAINT_RED_BLUE = new Color(200, 30, 130, 80);
+	public static Color FAINT_GREEN_BLUE = new Color(30, 200, 130, 80);
+
+
+	public static Color FAINT_RED = new Color(200, 30, 30, 150);
+	public static Color FAINT_GREEN = new Color(30, 200, 30, 150);
+	
+
+	public static Color FAINT_WHITE = new Color(220, 220, 220, 150);
+	public static Color FAINT_BLACK = new Color(20, 20, 20, 150);
+
 	public static Color COLOR_HISTOGRAM_BAR_THIS = new Color(200, 200, 200, 150);
 	public static Color COLOR_HISTOGRAM_BAR = new Color(100, 100, 250, 150);
 	public static Color COLOR_HISTOGRAM_BAR_VOL = new Color(55, 95, 230, 100);
@@ -31,16 +45,18 @@ public class DataPointGraphic {
 	static {
 		COLOR_MAP = new TreeMap<Integer, Color>();
 		for (int i = 0; i < PERCENT_CHANGE_COMPARISON_RANGE_ABS; i++) {
-			COLOR_MAP.put((-i), new Color(i * 10 + 50, 40, 60, 180));
-			COLOR_MAP.put(i, new Color(40, i * 10 + 50, 60, 180));
+			COLOR_MAP.put((-i), new Color(i * 5 + 150, 40 - i, 60 - i, 180));
+			COLOR_MAP.put(i, new Color(40 + i, i * 5 + 150, 60 + i, 180));
 		}
 	}
-	  Comparator<String> secondCharComparator = new Comparator<String>() {
-	        @Override public int compare(String s1, String s2) {
-	            return s1.substring(1, 2).compareTo(s2.substring(1, 2));
-	        }           
-	    };
-	private static final TreeMap<Line2D.Float, Color> PERCENT_CHANGE_COMPARISON_LINES = new TreeMap<Line2D.Float, Color>();
+	private static final Comparator<Line2D.Float> cusotomComparator = new Comparator<Line2D.Float>() {
+		@Override
+		public int compare(Line2D.Float s1, Line2D.Float s2) {
+			return (int) (((s1.x1+s1.y1) - (s2.x1+s2.y2)) * 10000);
+		}
+	};
+	private final TreeMap<Line2D.Float, Color> PERCENT_CHANGE_COMPARISON_LINES = new TreeMap<Line2D.Float, Color>(
+			cusotomComparator);
 	// previously histos
 	private ArrayList<Rectangle2D.Float> bars;
 
@@ -51,8 +67,9 @@ public class DataPointGraphic {
 	private Point2D.Float minMaxHisto = new Point2D.Float(0, 0);
 
 	private GeneralPath timePath;
-	private final ArrayList<Point2D.Float> timePathPoints = new ArrayList<Point2D.Float>();
-
+	private final TreeMap<Float, Point2D.Float> timePathPoints = new TreeMap<Float, Point2D.Float>();
+	private static final BasicStroke STROKE = new BasicStroke(4f,
+			BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
 	private String category = "";
 	private int categoryId;
 
@@ -64,8 +81,9 @@ public class DataPointGraphic {
 	public static int graphicRank = 0;
 	private float barwidth = (eWidth - 2 * PIXELS_BORDER) / StatInfo.nbars;
 	private boolean general = true;
-	ArrayList<float[]> timeSeriesCompayData = new ArrayList<float[]>();
+	TreeMap<Float, float[]> timeSeriesCompayData = new TreeMap<Float, float[]>();
 	float top, left;
+	private float graphInterval;
 	public static float rectWidth;
 	public static float eWidth;
 
@@ -129,7 +147,7 @@ public class DataPointGraphic {
 	private void setMinMaxHistogramHighlight() {
 
 		ArrayList<Float> variations = new ArrayList<Float>();
-		for (float[] timeSeries : timeSeriesCompayData) {
+		for (float[] timeSeries : timeSeriesCompayData.values()) {
 			variations.add(timeSeries[categoryId]);
 		}
 		float min = min(variations);
@@ -156,48 +174,93 @@ public class DataPointGraphic {
 
 		TreeMap<Float, float[]> technicals = Database.TECHNICAL_PRICE_DATA
 				.get(Database.dbSet.get(id));
-		ArrayList<Point2D.Float> marketToStockPairing = pairPriceWithMarketByDate(
+		TreeMap<Float, Point2D.Float> marketToStockPairing = pairPriceWithMarketByDate(
 				technicals, 6);
-		ArrayList<Float> stockPrices = makeListFromPricePair(
+		TreeMap<Float, Float> stockPrices = makeListFromPricePair(
 				marketToStockPairing, 0);
 		bars = createVolumeBars(technicals);
 
 		timePath = makePathFromData(stockPrices);
-		//depends on timePathPoints
+		// depends on timePathPoints
 		generatePercentComparisonLines(marketToStockPairing);
 	}
 
 	private void generatePercentComparisonLines(
-			ArrayList<Point2D.Float> marketToStockPairing) {
-		Point2D.Float dailyComparisonInitial = marketToStockPairing.get(0);
-		for (int i = 1; i < marketToStockPairing.size(); i++) {
+			TreeMap<Float, Point2D.Float> marketToStockPairing) {
+		Point2D.Float dailyComparisonInitial = marketToStockPairing
+				.firstEntry().getValue();
+		boolean first = true;
+		for (Entry<Float, Point2D.Float> ent : marketToStockPairing.entrySet()) {
+			if (first) {
+				first = false;
+				continue;
+			}
+			Point2D.Float dailyComparisonFinal = ent.getValue();
 
-			Point2D.Float dailyComparisonFinal = marketToStockPairing.get(i);
+			int individualDelta = (int) (calculateDifferenceIndividual(
+					dailyComparisonInitial, dailyComparisonFinal) * 1000);
 
-			int localToMarketDelta = (int) calculateDifferenceLocalToMarket(
-					dailyComparisonInitial, dailyComparisonFinal);
+			int marketDelta = (int) (calculateDifferenceMarket(
+					dailyComparisonInitial, dailyComparisonFinal) * 1000);
 
-			Point2D.Float startPoint = timePathPoints.get(i - 1);
-			float localX = startPoint.x;
-			float localY = startPoint.y;
+			 int individualToMarketDelta = (int) ((individualDelta -
+			 marketDelta));
 
-			float changeX = localX;
-			float changeY = localY - localToMarketDelta * 10;
+			// System.out.println(
+			// "percent change comparison:   "+individualToMarketDelta);
 
-			Line2D.Float comparisonLine = new Line2D.Float(localX, localY,
-					changeX, changeY);
-			if (localToMarketDelta > PERCENT_CHANGE_COMPARISON_RANGE_ABS)
-				localToMarketDelta = PERCENT_CHANGE_COMPARISON_RANGE_ABS;
-			if (localToMarketDelta < -PERCENT_CHANGE_COMPARISON_RANGE_ABS)
-				localToMarketDelta = -PERCENT_CHANGE_COMPARISON_RANGE_ABS;
-			Color relativeColor = COLOR_MAP.get(localToMarketDelta);
-			PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLine, relativeColor);
+			Point2D.Float startPoint = timePathPoints.get(ent.getKey());
+
+			float individualX = startPoint.x;
+			float individualY = startPoint.y;
+
+			float changeX = individualX;
+			float changeY = individualY - marketDelta * 10;
+
+			Line2D.Float comparisonLineMarket = new Line2D.Float(individualX,
+					individualY, changeX, changeY);
+
+			float changeYindividual = individualY - individualDelta * 10;
+
+			Line2D.Float comparisonLineIndividual = new Line2D.Float(
+					individualX, individualY, changeX, changeYindividual);
+			
+			float changeYMarketToIndividual = individualY - individualToMarketDelta * 10;
+
+			Line2D.Float comparisonLineIndividualToMarket = new Line2D.Float(
+					individualX, individualY, changeX, changeYMarketToIndividual);
+			// if (individualToMarketDelta >
+			// PERCENT_CHANGE_COMPARISON_RANGE_ABS)
+			// individualToMarketDelta = PERCENT_CHANGE_COMPARISON_RANGE_ABS;
+			// if (individualToMarketDelta <
+			// -PERCENT_CHANGE_COMPARISON_RANGE_ABS)
+			// individualToMarketDelta = -PERCENT_CHANGE_COMPARISON_RANGE_ABS;
+			// Color relativeColor = COLOR_MAP.get(individualToMarketDelta);
+			if (marketDelta < 0)
+				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineMarket,
+						FAINT_RED_BLUE);
+			else
+				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineMarket,
+						FAINT_GREEN_BLUE);
+			if (individualDelta < 0)
+				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineIndividual,
+						FAINT_RED);
+			else
+				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineIndividual,
+						FAINT_GREEN);
+
+			if (individualToMarketDelta > 0)
+				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineIndividualToMarket,
+						FAINT_WHITE);
+			else
+				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineIndividualToMarket,
+						FAINT_BLACK);
 			dailyComparisonInitial = dailyComparisonFinal;
 
 		}
 	}
 
-	private float calculateDifferenceLocalToMarket(
+	private float calculateDifferenceIndividual(
 			Point2D.Float dailyComparisonInitial,
 			Point2D.Float dailyComparisonFinal) {
 
@@ -205,18 +268,34 @@ public class DataPointGraphic {
 		float marketFinal = dailyComparisonFinal.y;
 		float marketChange = (marketFinal - marketInitial) / marketInitial;
 
-		float localInitial = dailyComparisonInitial.x;
-		float localFinal = dailyComparisonFinal.x;
-		float localChange = (localFinal - localInitial) / localFinal;
-		return localChange - marketChange;
+		float individualInitial = dailyComparisonInitial.x;
+		float individualFinal = dailyComparisonFinal.x;
+		float individualChange = (individualFinal - individualInitial)
+				/ individualFinal;
+		return individualChange;
+	}
+
+	private float calculateDifferenceMarket(
+			Point2D.Float dailyComparisonInitial,
+			Point2D.Float dailyComparisonFinal) {
+
+		float marketInitial = dailyComparisonInitial.y;
+		float marketFinal = dailyComparisonFinal.y;
+		float marketChange = (marketFinal - marketInitial) / marketInitial;
+
+		float individualInitial = dailyComparisonInitial.x;
+		float individualFinal = dailyComparisonFinal.x;
+		float individualChange = (individualFinal - individualInitial)
+				/ individualFinal;
+		return marketChange;
 	}
 
 	private void setUpGeneralGraphData() {
 		bars = setUpBars(Database.statistics.get(categoryId).histogram);
 
-		for (float[][] allData : Database.DB_ARRAY.values()) {
+		for (Entry<Float, float[][]> allData : Database.DB_ARRAY.entrySet()) {
 			// get all company data (all 87 pts) for each collected set
-			timeSeriesCompayData.add(allData[id]);//
+			timeSeriesCompayData.put(allData.getKey(), allData.getValue()[id]);//
 
 		}
 
@@ -257,24 +336,25 @@ public class DataPointGraphic {
 				new MathContext(placesToRoundTo)).floatValue();
 	}
 
-	private ArrayList<Float> makeListFromPointInArray(
-			ArrayList<float[]> coData, int id) {
+	private TreeMap<Float, Float> makeListFromPointInArray(
+			TreeMap<Float, float[]> coData, int id) {
 
-		ArrayList<Float> pts = new ArrayList<Float>();
-		for (float[] data : coData) {
-			pts.add(data[id]);
+		TreeMap<Float, Float> pts = new TreeMap<Float, Float>();
+		for (Entry<Float, float[]> data : coData.entrySet()) {
+
+			pts.put(data.getKey(), data.getValue()[id]);
 		}
 		return pts;
 	}
 
 	// coordinate individual with total market
-	private ArrayList<Point2D.Float> pairPriceWithMarketByDate(
+	private TreeMap<Float, Point2D.Float> pairPriceWithMarketByDate(
 			TreeMap<Float, float[]> technicals, int idPt) {
-		ArrayList<Point2D.Float> pricePoints = new ArrayList<Point2D.Float>();
+		TreeMap<Float, Point2D.Float> pricePoints = new TreeMap<Float, Point2D.Float>();
 		for (Entry<Float, float[]> ent : technicals.entrySet()) {
 			Point2D.Float priceMatch = new Point2D.Float(ent.getValue()[idPt],
 					Database.SUM_MARKET_PRICE_DATA.get(ent.getKey())[idPt]);
-			pricePoints.add(priceMatch);
+			pricePoints.put(ent.getKey(), priceMatch);
 		}
 		return pricePoints;
 	}
@@ -290,43 +370,46 @@ public class DataPointGraphic {
 	}
 
 	// coordinate individual with total market
-	private ArrayList<Float> makeListFromPricePair(
-			ArrayList<Point2D.Float> priceByDate, int id) {
+	private TreeMap<Float, Float> makeListFromPricePair(
+			TreeMap<Float, Point2D.Float> priceByDate, int id) {
 
-		ArrayList<Float> pts = new ArrayList<Float>();
-		for (Point2D.Float prices : priceByDate) {
+		TreeMap<Float, Float> pts = new TreeMap<Float, Float>();
+		for (Entry<Float, Point2D.Float> prices : priceByDate.entrySet()) {
 			switch (id) {
 			case 0:
-				pts.add(prices.x);
+				pts.put(prices.getKey(), prices.getValue().x);
 				break;
 			case 1:
-				pts.add(prices.y);
+				pts.put(prices.getKey(), prices.getValue().y);
 				break;
 			}
 		}
 		return pts;
 	}
 
-	private GeneralPath makePathFromData(ArrayList<Float> pts) {
+	private GeneralPath makePathFromData(TreeMap<Float, Float> pts) {
 		GeneralPath trend = new GeneralPath();
-
+		timePathPoints.clear();
 		// /////////////////////
-		float minimumPt = roundTo(min(pts), 3);
-		float maximumPt = roundTo(max(pts), 3);
+		float minimumPt = roundTo(min(new ArrayList<Float>(pts.values())), 3);
+		float maximumPt = roundTo(max(new ArrayList<Float>(pts.values())), 3);
 		minMaxLine = new Point2D.Float(minimumPt, maximumPt);
 		// System.out.println(category + " range: " + minimumPt + "   ---   "
 		// + maximumPt);
 		float range = maximumPt - minimumPt;
 		float vertScaling = (PIXELS_HEIGHT * verticalSizeInt) / range;
 
-		float graphInterval = (eWidth - PIXELS_BORDER * 2) / (pts.size() - 1);
+		graphInterval = (eWidth - PIXELS_BORDER * 2) / (pts.size());
 		int i = 0;
-		for (float f : pts) {
+		for (Entry<Float, Float> e : pts.entrySet()) {
+			float f = e.getValue();
+			float date = e.getKey();
 			float xpt = 2 * PIXELS_BORDER + graphInterval * i;
 
 			float ypt = top + PIXELS_HEIGHT * verticalSizeInt
 					- (vertScaling * (f - minimumPt));
-			timePathPoints.add(new Point2D.Float(xpt, ypt));
+			if (!general)
+				timePathPoints.put(date, new Point2D.Float(xpt, ypt));
 			if (i == 0) {
 				trend.moveTo(xpt, ypt);
 			} else {
@@ -401,12 +484,13 @@ public class DataPointGraphic {
 	}
 
 	public void rescale() {
-
+		// PERCENT_CHANGE_COMPARISON_LINES.clear();
 		init(category, ticker);
 	}
 
 	public void drawMe(Graphics2D g) {
-		drawPercentComparisonLines(g);
+		if (!general)
+			drawPercentComparisonLines(g);
 		int J = 0;
 		for (Rectangle2D.Float bar : bars) {
 			if (general) {
@@ -441,10 +525,24 @@ public class DataPointGraphic {
 	}
 
 	private void drawPercentComparisonLines(Graphics2D g) {
+		// System.out.println(
+		// PERCENT_CHANGE_COMPARISON_LINES.size()+"      < --------------------- size");
 		for (Entry<Line2D.Float, Color> comparison : PERCENT_CHANGE_COMPARISON_LINES
 				.entrySet()) {
+			Stroke original = g.getStroke();
+			// System.out.println(comparison.getValue().getRed()+"  "+comparison.getValue().getGreen()+"  "+comparison.getValue().getBlue());
+			// System.out.println( "x1: "+comparison.getKey().x1);
+			// System.out.println( "y1: "+comparison.getKey().y1);
+			// System.out.println( "x2: "+comparison.getKey().x2);
+			// System.out.println( "y2: "+comparison.getKey().y2);
+			g.setStroke(STROKE);
 			g.setColor(comparison.getValue());
 			g.draw(comparison.getKey());
+			Ellipse2D.Float elipse = new Ellipse2D.Float(
+					comparison.getKey().x1 - 3, comparison.getKey().y1 - 3, 6,
+					6);
+			g.draw(elipse);
+			g.setStroke(original);
 		}
 	}
 
