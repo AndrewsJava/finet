@@ -198,6 +198,8 @@ public class JComponentFactory {
 						CustomButton tickerButton = JComponentFactory
 								.doIndividualTickerButtonForPanel(s,
 										a.getText(), jf);
+						tickerButton.setBackground(new Color(100,140,255));
+						tickerButton.setMinimumSize(new Dimension(300,45));
 						stepScroll.addComp((tickerButton));
 					}
 				}
@@ -239,6 +241,7 @@ public class JComponentFactory {
 		final int tickerLocation = Database.dbSet.indexOf(s);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
 		addButtonDetails(a, marketCap, tickerLocation);
+		a.setHorizontalAlignment(SwingConstants.LEFT);
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -246,7 +249,7 @@ public class JComponentFactory {
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setVisible(true);
-				closeMe.dispose();
+		//		closeMe.dispose();
 				ProfileCanvas pc = new ProfileCanvas((buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
 
@@ -262,6 +265,8 @@ public class JComponentFactory {
 	private static void addButtonDetails(CustomButton a, double marketCap,
 			int tLoc) {
 		String title = a.getText();
+		if(title.length()<2)title+="  ";
+		if(title.length()<3)title+=" ";
 		for (int i = 10; i > title.length(); i--) {
 			title += " ";
 		}
@@ -275,9 +280,11 @@ public class JComponentFactory {
 				.replaceAll("_", " ");
 		int rankAverage = (int) (1000 * ProfileCanvas
 				.calculateWordRankAverage(t));
-		if (rankAverage < 10) {
+		if (rankAverage < 100) {
 			title += "     (0";
-		} else {
+			if (rankAverage < 10)  
+				title += "0";
+		}   else {
 			title += "     (";
 		}
 		title += rankAverage + ")";
@@ -386,15 +393,15 @@ public class JComponentFactory {
 		} catch (Exception e) {
 			return;
 		}
-		int color = 70;
+		int color = 120;
 		if (earningsDate < EarningsTest.dayNumber()) {
 			a.setBackground(new Color(color, color, color));
 		} else {
-			color = 130;
+			color = 150;
 			double today = EarningsTest.dayNumber();
-			while (today < earningsDate && color >= 0) {
+			while (today < earningsDate  ) {
 
-				color += 10;
+				color += 15;
 				if (color > 255)
 					color = 255;
 				today += 2;

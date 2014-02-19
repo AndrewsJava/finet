@@ -4,6 +4,7 @@ import harlequinmettle.financialsnet.interfaces.DBLabels;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.awt.geom.Ellipse2D;
@@ -30,10 +31,8 @@ public class DataPointGraphic {
 	public static Color FAINT_RED_BLUE = new Color(200, 30, 130, 80);
 	public static Color FAINT_GREEN_BLUE = new Color(30, 200, 130, 80);
 
-
 	public static Color FAINT_RED = new Color(200, 30, 30, 150);
 	public static Color FAINT_GREEN = new Color(30, 200, 30, 150);
-	
 
 	public static Color FAINT_WHITE = new Color(220, 220, 220, 150);
 	public static Color FAINT_BLACK = new Color(20, 20, 20, 150);
@@ -52,7 +51,7 @@ public class DataPointGraphic {
 	private static final Comparator<Line2D.Float> cusotomComparator = new Comparator<Line2D.Float>() {
 		@Override
 		public int compare(Line2D.Float s1, Line2D.Float s2) {
-			return (int) (((s1.x1+s1.y1) - (s2.x1+s2.y2)) * 10000);
+			return (int) (((s1.x1 + s1.y1) - (s2.x1 + s2.y2)) * 10000);
 		}
 	};
 	private final TreeMap<Line2D.Float, Color> PERCENT_CHANGE_COMPARISON_LINES = new TreeMap<Line2D.Float, Color>(
@@ -65,11 +64,18 @@ public class DataPointGraphic {
 	private Point2D.Float minMaxLine = new Point2D.Float(0, 0);
 	private Point2D.Float minMaxBars = new Point2D.Float(0, 0);
 	private Point2D.Float minMaxHisto = new Point2D.Float(0, 0);
+	private Point2D.Float minMaxMarket = new Point2D.Float(0, 0);
+	private Point2D.Float startFinishTicker = new Point2D.Float(0, 0);
+	private Point2D.Float startFinishMarket = new Point2D.Float(0, 0);
 
 	private GeneralPath timePath;
+	private GeneralPath marketTimePath;
 	private final TreeMap<Float, Point2D.Float> timePathPoints = new TreeMap<Float, Point2D.Float>();
-	private static final BasicStroke STROKE = new BasicStroke(4f,
+	private static final BasicStroke STROKE = new BasicStroke(2f,
 			BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+	private static final int INDIVIDUAL = 10;
+	private static final int MARKET = 50;
+	private static final Color MARKET_VALUE =new Color(50, 150, 150, 90);
 	private String category = "";
 	private int categoryId;
 
@@ -178,9 +184,13 @@ public class DataPointGraphic {
 				technicals, 6);
 		TreeMap<Float, Float> stockPrices = makeListFromPricePair(
 				marketToStockPairing, 0);
+		TreeMap<Float, Float> marketValue = makeListFromPricePair(
+				marketToStockPairing, 1);
 		bars = createVolumeBars(technicals);
 
-		timePath = makePathFromData(stockPrices);
+		marketTimePath = makePathFromData(marketValue,MARKET);
+		timePathPoints.clear();
+		timePath = makePathFromData(stockPrices,INDIVIDUAL);
 		// depends on timePathPoints
 		generatePercentComparisonLines(marketToStockPairing);
 	}
@@ -203,8 +213,7 @@ public class DataPointGraphic {
 			int marketDelta = (int) (calculateDifferenceMarket(
 					dailyComparisonInitial, dailyComparisonFinal) * 1000);
 
-			 int individualToMarketDelta = (int) ((individualDelta -
-			 marketDelta));
+			int individualToMarketDelta = (int) ((individualDelta - marketDelta));
 
 			// System.out.println(
 			// "percent change comparison:   "+individualToMarketDelta);
@@ -224,11 +233,13 @@ public class DataPointGraphic {
 
 			Line2D.Float comparisonLineIndividual = new Line2D.Float(
 					individualX, individualY, changeX, changeYindividual);
-			
-			float changeYMarketToIndividual = individualY - individualToMarketDelta * 10;
+
+			float changeYMarketToIndividual = individualY
+					- individualToMarketDelta * 10;
 
 			Line2D.Float comparisonLineIndividualToMarket = new Line2D.Float(
-					individualX, individualY, changeX, changeYMarketToIndividual);
+					individualX, individualY, changeX,
+					changeYMarketToIndividual);
 			// if (individualToMarketDelta >
 			// PERCENT_CHANGE_COMPARISON_RANGE_ABS)
 			// individualToMarketDelta = PERCENT_CHANGE_COMPARISON_RANGE_ABS;
@@ -250,11 +261,11 @@ public class DataPointGraphic {
 						FAINT_GREEN);
 
 			if (individualToMarketDelta > 0)
-				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineIndividualToMarket,
-						FAINT_WHITE);
+				PERCENT_CHANGE_COMPARISON_LINES.put(
+						comparisonLineIndividualToMarket, FAINT_WHITE);
 			else
-				PERCENT_CHANGE_COMPARISON_LINES.put(comparisonLineIndividualToMarket,
-						FAINT_BLACK);
+				PERCENT_CHANGE_COMPARISON_LINES.put(
+						comparisonLineIndividualToMarket, FAINT_BLACK);
 			dailyComparisonInitial = dailyComparisonFinal;
 
 		}
@@ -300,7 +311,7 @@ public class DataPointGraphic {
 		}
 
 		timePath = makePathFromData(makeListFromPointInArray(
-				timeSeriesCompayData, categoryId));
+				timeSeriesCompayData, categoryId),INDIVIDUAL);
 
 		setMinMaxHistogramHighlight();
 	}
@@ -387,14 +398,19 @@ public class DataPointGraphic {
 		return pts;
 	}
 
-	private GeneralPath makePathFromData(TreeMap<Float, Float> pts) {
+	private GeneralPath makePathFromData(TreeMap<Float, Float> pts,int TYPE) {
 		GeneralPath trend = new GeneralPath();
 		timePathPoints.clear();
 		// /////////////////////
 		float minimumPt = roundTo(min(new ArrayList<Float>(pts.values())), 3);
 		float maximumPt = roundTo(max(new ArrayList<Float>(pts.values())), 3);
-		minMaxLine = new Point2D.Float(minimumPt, maximumPt);
-		// System.out.println(category + " range: " + minimumPt + "   ---   "
+		if(TYPE == INDIVIDUAL){
+			minMaxLine = new Point2D.Float(minimumPt, maximumPt);
+			startFinishTicker = new Point2D.Float(pts.firstEntry().getValue(),pts.lastEntry().getValue());
+		}if(TYPE == MARKET){
+			minMaxMarket = new Point2D.Float(minimumPt, maximumPt);
+			startFinishMarket = new Point2D.Float(pts.firstEntry().getValue(),pts.lastEntry().getValue());
+		}// System.out.println(category + " range: " + minimumPt + "   ---   "
 		// + maximumPt);
 		float range = maximumPt - minimumPt;
 		float vertScaling = (PIXELS_HEIGHT * verticalSizeInt) / range;
@@ -408,8 +424,10 @@ public class DataPointGraphic {
 
 			float ypt = top + PIXELS_HEIGHT * verticalSizeInt
 					- (vertScaling * (f - minimumPt));
-			if (!general)
+			if (!general){
+				if(TYPE== INDIVIDUAL)
 				timePathPoints.put(date, new Point2D.Float(xpt, ypt));
+			}
 			if (i == 0) {
 				trend.moveTo(xpt, ypt);
 			} else {
@@ -514,13 +532,43 @@ public class DataPointGraphic {
 		g.drawString("" + minMaxLine.x, eWidth - 100, top + PIXELS_HEIGHT
 				- PIXELS_BORDER);
 		g.drawString("" + minMaxLine.y, eWidth - 100, top + 13);
+		if(!general){
+			g.setColor(MARKET_VALUE);
 
-		if (general)
+			g.drawString("" + minMaxMarket.x/1000, eWidth - 100, top + PIXELS_HEIGHT
+					- PIXELS_BORDER+20);
+			g.drawString("" + minMaxMarket.y/1000, eWidth - 100, top + 13+20);
+			g.setColor(new Color(100,100,200,200));
+			g.setFont(new Font("Sans-Serif",Font.ITALIC, 17));
+			int top = 25;
+			int left = 22;
+			int inc = 25;
+			g.drawString("total variability: " ,left , top);
+			float marketPercentChange  = (int)(100*(minMaxMarket.y-minMaxMarket.x)/minMaxMarket.x);
+			g.drawString("market: " + marketPercentChange,left,top+inc);
+			float individualPercentChange  = (int)(100*(minMaxLine.y-minMaxLine.x)/minMaxLine.x);
+			g.drawString(ticker+ ": " + individualPercentChange,left,top+inc*2);
+			
+			g.drawString("overall change: " ,left , top+inc*4);
+			float market   = (int)(100*(startFinishMarket.y-startFinishMarket.x)/startFinishMarket.x);
+			g.drawString("market: " + market,left,top+inc*5);
+			float individual   = (int)(100*(startFinishTicker.y-startFinishTicker.x)/startFinishTicker.x);
+			g.drawString(ticker+ ": " + individual,left,top+inc*6);
+		}
+
+		if (general) {
 			g.setColor(Color.blue);
-		else
+
+			g.draw(timePath);
+		} else {
+			Stroke s = g.getStroke();
+			g.setStroke(STROKE);
 			g.setColor(Color.magenta);
-		g.draw(timePath);
-		drawHighlightWindows(g);
+			g.draw(timePath);
+			g.setColor(MARKET_VALUE);
+			g.draw(marketTimePath);
+			g.setStroke(s);
+		} 
 
 	}
 
