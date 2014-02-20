@@ -293,6 +293,24 @@ public class JComponentFactory {
 			title += " ";
 		}
 		title += "|";
+		TreeMap<Float,float[]> prices = 
+		Database.TECHNICAL_PRICE_DATA.get(title.split(" ")[0]);
+		ArrayList<Float> priceChanges = new ArrayList<Float>();
+		float[] initial = prices.firstEntry().getValue();
+		boolean first = true;
+		for(Entry<Float,float[]> ent : prices.entrySet()	){
+			if(first){
+				first = false;
+				continue;
+			}
+			float[] ending = ent.getValue();
+			float change = (ending[6]-initial[6])/initial[6];
+			priceChanges.add(change);
+		}
+		StatInfo stat = new StatInfo(priceChanges,false);
+	//	float stdv = DataPointGraphic.roundTo(stat.standardDeviation, 3);
+		int stdv = (int)(1000*stat.standardDeviation);
+		title+="   "+stdv;
 		a.setText(title);
 	}
 

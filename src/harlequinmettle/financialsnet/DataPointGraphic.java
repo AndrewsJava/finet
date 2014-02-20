@@ -342,7 +342,7 @@ public class DataPointGraphic {
 		return max;
 	}
 
-	private float roundTo(float numberToRound, int placesToRoundTo) {
+	  static float roundTo(float numberToRound, int placesToRoundTo) {
 		return new BigDecimal(numberToRound).round(
 				new MathContext(placesToRoundTo)).floatValue();
 	}
