@@ -34,12 +34,16 @@ public class DataPointGraphic {
 	public static Color FAINT_RED = new Color(200, 30, 30, 150);
 	public static Color FAINT_GREEN = new Color(30, 200, 30, 150);
 
-	public static Color FAINT_WHITE = new Color(220, 220, 220, 150);
-	public static Color FAINT_BLACK = new Color(20, 20, 20, 150);
+//	public static Color FAINT_WHITE = new Color(220, 220, 220, 150);
+  public static Color FAINT_BLACK = new Color(20, 20, 20, 180);
 
 	public static Color COLOR_HISTOGRAM_BAR_THIS = new Color(200, 200, 200, 150);
 	public static Color COLOR_HISTOGRAM_BAR = new Color(100, 100, 250, 150);
 	public static Color COLOR_HISTOGRAM_BAR_VOL = new Color(55, 95, 230, 100);
+	
+
+	private static final Color MARKET_VALUE = Color.white;//new Color(50, 150, 150, 90);
+	
 	private static final TreeMap<Integer, Color> COLOR_MAP;
 	static {
 		COLOR_MAP = new TreeMap<Integer, Color>();
@@ -75,7 +79,6 @@ public class DataPointGraphic {
 			BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
 	private static final int INDIVIDUAL = 10;
 	private static final int MARKET = 50;
-	private static final Color MARKET_VALUE =new Color(50, 150, 150, 90);
 	private String category = "";
 	private int categoryId;
 
@@ -219,23 +222,23 @@ public class DataPointGraphic {
 			// "percent change comparison:   "+individualToMarketDelta);
 
 			Point2D.Float startPoint = timePathPoints.get(ent.getKey());
-
+float scalingMultiple = 2.5f;
 			float individualX = startPoint.x;
 			float individualY = startPoint.y;
 
 			float changeX = individualX;
-			float changeY = individualY - marketDelta * 10;
+			float changeY = individualY - marketDelta * scalingMultiple;
 
 			Line2D.Float comparisonLineMarket = new Line2D.Float(individualX,
 					individualY, changeX, changeY);
 
-			float changeYindividual = individualY - individualDelta * 10;
+			float changeYindividual = individualY - individualDelta * scalingMultiple;
 
 			Line2D.Float comparisonLineIndividual = new Line2D.Float(
 					individualX, individualY, changeX, changeYindividual);
 
 			float changeYMarketToIndividual = individualY
-					- individualToMarketDelta * 10;
+					- individualToMarketDelta * scalingMultiple;
 
 			Line2D.Float comparisonLineIndividualToMarket = new Line2D.Float(
 					individualX, individualY, changeX,
@@ -262,10 +265,10 @@ public class DataPointGraphic {
 
 			if (individualToMarketDelta > 0)
 				PERCENT_CHANGE_COMPARISON_LINES.put(
-						comparisonLineIndividualToMarket, FAINT_WHITE);
+						comparisonLineIndividualToMarket, Color.green);
 			else
 				PERCENT_CHANGE_COMPARISON_LINES.put(
-						comparisonLineIndividualToMarket, FAINT_BLACK);
+						comparisonLineIndividualToMarket, Color.red);
 			dailyComparisonInitial = dailyComparisonFinal;
 
 		}
@@ -526,18 +529,8 @@ public class DataPointGraphic {
 		g.setColor(new Color(20, 20, 10 + 10 * 19));
 		g.draw(border);
 
-		g.setColor(Color.white);
-		g.drawString(category, left + PIXELS_BORDER, top + 15);
+		if(!general){ 
 
-		g.drawString("" + minMaxLine.x, eWidth - 100, top + PIXELS_HEIGHT
-				- PIXELS_BORDER);
-		g.drawString("" + minMaxLine.y, eWidth - 100, top + 13);
-		if(!general){
-			g.setColor(MARKET_VALUE);
-
-			g.drawString("" + minMaxMarket.x/1000, eWidth - 100, top + PIXELS_HEIGHT
-					- PIXELS_BORDER+20);
-			g.drawString("" + minMaxMarket.y/1000, eWidth - 100, top + 13+20);
 			g.setColor(new Color(100,100,200,200));
 			g.setFont(new Font("Sans-Serif",Font.ITALIC, 17));
 			int top = 25;
@@ -560,6 +553,12 @@ public class DataPointGraphic {
 			g.setColor(Color.blue);
 
 			g.draw(timePath);
+			g.setColor(Color.white);
+			g.drawString(category, left + PIXELS_BORDER, top + 15);
+
+			g.drawString("" + minMaxLine.x, eWidth - 100, top + PIXELS_HEIGHT
+					- PIXELS_BORDER);
+			g.drawString("" + minMaxLine.y, eWidth - 100, top + 13);
 		} else {
 			Stroke s = g.getStroke();
 			g.setStroke(STROKE);
@@ -568,6 +567,8 @@ public class DataPointGraphic {
 			g.setColor(MARKET_VALUE);
 			g.draw(marketTimePath);
 			g.setStroke(s);
+ 
+				drawPriceRangeWindows(g);
 		} 
 
 	}
@@ -594,10 +595,19 @@ public class DataPointGraphic {
 		}
 	}
 
-	private void drawHighlightWindows(Graphics2D g) {
+	private void drawPriceRangeWindows(Graphics2D g) {
 
-		// g.setColor(new Color(200, 200, 200, 200));
-		// g.fillRect(W - 110, H - 70, 90, 40);
+		 g.setColor(FAINT_BLACK);
+		 g.fillRect((int)eWidth- 65,PIXELS_BORDER,60,PIXELS_HEIGHT+25);
+			g.setColor(MARKET_VALUE);
+
+			g.drawString("" + minMaxMarket.x/1000, eWidth - 60, top + PIXELS_HEIGHT
+					- PIXELS_BORDER+20);
+			g.drawString("" + minMaxMarket.y/1000, eWidth - 60, top + 13+20);
+
+			g.drawString("" + minMaxLine.x, eWidth - 60, top + PIXELS_HEIGHT
+					- PIXELS_BORDER);
+			g.drawString("" + minMaxLine.y, eWidth - 60, top + 13);
 		// g.fillRect(W - 110, H - 4 * PART - 0, 90, 40);
 		// g.setColor(new Color(205, 00, 205));
 		// g.drawString("" + priceRange.x, W - 100, H - 55);

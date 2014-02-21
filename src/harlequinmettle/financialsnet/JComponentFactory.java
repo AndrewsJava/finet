@@ -198,7 +198,7 @@ public class JComponentFactory {
 						CustomButton tickerButton = JComponentFactory
 								.doIndividualTickerButtonForPanel(s,
 										a.getText(), jf);
-						tickerButton.setBackground(new Color(100,140,255));
+						//tickerButton.setBackground(new Color(100,140,255));
 						tickerButton.setMinimumSize(new Dimension(300,45));
 						stepScroll.addComp((tickerButton));
 					}
@@ -215,7 +215,7 @@ public class JComponentFactory {
 		a.setPreferredSize(new Dimension(60, 20));
 		final int tickerLocation = Database.dbSet.indexOf(s);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
-		addButtonDetails(a, marketCap, tickerLocation);
+		addButtonDetails(a, marketCap, tickerLocation, buttonData);
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -240,7 +240,10 @@ public class JComponentFactory {
 		a.setPreferredSize(new Dimension(60, 20));
 		final int tickerLocation = Database.dbSet.indexOf(s);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
-		addButtonDetails(a, marketCap, tickerLocation);
+		addButtonDetails(a, marketCap, tickerLocation, buttonData);
+
+		colorButtonByPercentChangeAfterEarningsReport(a, buttonData,a.getText().split(" ")[0]);
+		
 		a.setHorizontalAlignment(SwingConstants.LEFT);
 		a.addActionListener(new ActionListener() {
 			@Override
@@ -248,6 +251,7 @@ public class JComponentFactory {
 
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
+				jf.setExtendedState( jf.getExtendedState()|JFrame.MAXIMIZED_BOTH );
 				jf.setVisible(true);
 		//		closeMe.dispose();
 				ProfileCanvas pc = new ProfileCanvas((buttonData),
@@ -263,7 +267,7 @@ public class JComponentFactory {
 	}
 
 	private static void addButtonDetails(CustomButton a, double marketCap,
-			int tLoc) {
+			int tLoc, String buttonData) {
 		String title = a.getText();
 		if(title.length()<2)title+="  ";
 		if(title.length()<3)title+=" ";
@@ -281,13 +285,13 @@ public class JComponentFactory {
 		int rankAverage = (int) (1000 * ProfileCanvas
 				.calculateWordRankAverage(t));
 		if (rankAverage < 100) {
-			title += "     (0";
+			title += "     L0";
 			if (rankAverage < 10)  
 				title += "0";
 		}   else {
-			title += "     (";
+			title += "     L";
 		}
-		title += rankAverage + ")";
+		title += rankAverage + "T";
 
 		for (int i = 30; i > title.length(); i--) {
 			title += " ";
@@ -310,8 +314,65 @@ public class JComponentFactory {
 		StatInfo stat = new StatInfo(priceChanges,false);
 	//	float stdv = DataPointGraphic.roundTo(stat.standardDeviation, 3);
 		int stdv = (int)(1000*stat.standardDeviation);
+		//colorButtonBasedOnStandardDeviation(a, stdv);
+		if(stdv>=1000)stdv = 999;
 		title+="   "+stdv;
+		if(stdv<100)title+=" ";
+		if(stdv<10)title+=" ";
+		title+="   |   ";
+		if(!Database.INDIVIDUAL_OVERALL_CHANGES.containsKey(a.getText().split(" ")[0]))
+			return;
+		int overallChange = (int)(float)Database.INDIVIDUAL_OVERALL_CHANGES.get(//
+				a.getText()//
+				.split(" ")//
+				[0]);
+	//	colorButtonBasedOnOverallChange(a,overallChange);
+		title+=overallChange;
+		if(overallChange<100 && overallChange>-9)title+=" ";
+		if(overallChange<10 && overallChange>0)title+=" ";
+		title+="   |   ";
 		a.setText(title);
+	}
+
+	private static void colorButtonByPercentChangeAfterEarningsReport(CustomButton a,String dateInfo, String ticker) {
+	 
+		String[] dates = dateInfo.split(" ");
+		if (dates.length < 2) {
+			System.out.println("\n\nARRAY IS SHORT : " + dateInfo + "  -->  "
+					+ Arrays.toString(dates));
+			return;
+		}
+ 
+		try {
+			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
+					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
+		//	int collectionDate = (int) Double.parseDouble(dates[0]);
+			float change = Database.calculatePercentChange(Database.dbSet.indexOf(ticker), earningsReportDate-10,earningsReportDate+2);	
+			int red =  (int)(50+change*3); 
+			int green =  (int)(40+change*3);
+			int blue =  (int)(100+change*10);
+			if(red >254)red = 255;
+			if(green>254)green = 255;
+			if(blue>254)blue = 255;
+			if(red<1)red = 1;
+			if(green<1)green = 1;
+			if(blue<1)blue = 1;
+			a.setBackground(new Color(red,green,blue));
+			String rename = a.getText()+change;
+			a.setText(rename);
+		}catch (Exception e){}
+	}
+	private static void colorButtonBasedOnOverallChange(CustomButton a,
+			int overallChange) {
+		System.out.println("overall market: "+Database.overallMarketChange);
+		System.out.println("median :            "+Database.changesStats.median);
+		
+	}
+
+	private static void colorButtonBasedOnStandardDeviation(CustomButton a,
+			int stdv) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	private static void addTabBuildingListener(final CustomButton a) {

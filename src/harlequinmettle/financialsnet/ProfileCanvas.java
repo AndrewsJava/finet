@@ -33,7 +33,7 @@ public class ProfileCanvas extends JPanel {
 	public static int H = DBLabels.labels.length
 			* DataPointGraphic.PIXELS_HEIGHT + DBLabels.labels.length
 			// fix this 4 for technical graph constant
-			* DataPointGraphic.PIXELS_BORDER + 4
+			* DataPointGraphic.PIXELS_BORDER + 6//added 2 for good measure
 			* DataPointGraphic.PIXELS_HEIGHT;
 	public static final int FONT_SIZE = 30;
 	public static final Font BIG_FONT = new Font("Sans-Serif", Font.BOLD,
@@ -41,6 +41,7 @@ public class ProfileCanvas extends JPanel {
 	public static final Color TEXT_COLOR = new Color(120, 150, 220, 100);
 
 	ArrayList<String> lines = new ArrayList<String>();
+	
 	TreeMap<Float, float[]> technicals;
 
 	private int earnDateX;
@@ -71,7 +72,6 @@ public class ProfileCanvas extends JPanel {
 		this.dateInfo = dateInfo;
 		init(id);
 		rescaleCanvas(new Dimension(width, height));
-		System.out.println("dateinfo: "+dateInfo);
 	}
 
 	public ProfileCanvas(int id) {
@@ -158,9 +158,13 @@ public class ProfileCanvas extends JPanel {
 				}
 				index++;
 			}
-			System.out.println("\n\nearnings report date : "
+			System.out.println("---------------->\n\nearnings report date : "
 					+ earningsReportDate);
 			System.out.println("collection date      : " + collectionDate);
+			System.out.println("dateinfo: "+dateInfo);
+			System.out.println("colectionDateX: "+collectionDateX);
+			System.out.println("earnDateX: "+earnDateX);
+			System.out.println("click pt: "+x+"\n\n<-------------------");
 		} catch (ParseException e) { 
 
 		}
@@ -189,15 +193,13 @@ public class ProfileCanvas extends JPanel {
 	}
 
 	private void drawDateLines(Graphics2D g) {
-		g.setColor(Color.green);
+		g.setColor(new Color(100,50,150,150));
 		g.drawLine(x, 0, x, H);
 		g.setColor(Color.gray);
 		g.drawLine(collectionDateX, 0, collectionDateX, H);
 		g.setColor(Color.white);
 		g.drawLine(earnDateX, 0, earnDateX, H);
-		System.out.println("colectionDateX: "+collectionDateX);
-		System.out.println("earnDateX: "+earnDateX);
-		System.out.println("click pt: "+x);
+
 	}
 
 	private void drawTextInBackground(Graphics2D g) {
@@ -223,7 +225,7 @@ public class ProfileCanvas extends JPanel {
 				.replaceAll("_", " ");
 		double rankTotal = calculateWordRankTotal(t);
 		double rankAverage = calculateWordRankAverage(t);
-		lines.add(new String(" "));
+for(int i = 0; i<15; i++)
 		lines.add(new String(" "));
 		lines.add("word rank sum: " + rankTotal);
 		lines.add("-----");

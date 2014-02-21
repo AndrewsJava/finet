@@ -70,6 +70,9 @@ public class Database implements Qi, Yi, DBLabels {
 
 	static boolean loaded = false;
 
+	public static float overallMarketChange;
+	public static final TreeMap<String, Float> INDIVIDUAL_OVERALL_CHANGES = new TreeMap<String, Float>();
+	public static StatInfo changesStats;
 	// PARSEING:
 	// LOADING:
 
@@ -84,6 +87,7 @@ public class Database implements Qi, Yi, DBLabels {
 		calculateChanges();
 		computeSuplementalFactors();
 		fillTechnicals();
+		mapChangesAndTheirStats(); 
 		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
 			SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
 			String formated = sdf.format(new Date(
@@ -106,6 +110,28 @@ public class Database implements Qi, Yi, DBLabels {
 					+ "   --valid price data-> " + ent.getValue());
 		}
 
+	}
+
+	private void mapChangesAndTheirStats() {
+		overallMarketChange = (int)(100*(
+				(Database.SUM_MARKET_PRICE_DATA.lastEntry().getValue()[6])-Database.SUM_MARKET_PRICE_DATA.ceilingEntry( 15800f).getValue()[6])
+				/(Database.SUM_MARKET_PRICE_DATA.ceilingEntry( 15800f).getValue()[6]));
+		
+		for(Entry<String, TreeMap<Float, float[]>> ent: TECHNICAL_PRICE_DATA.entrySet() ){
+			TreeMap<Float, float[]> technicals = ent.getValue();
+			int individualOverallChange  = (int)(100*((technicals.lastEntry().getValue()[6] - technicals.firstEntry().getValue()[6])/(technicals.firstEntry().getValue()[6])
+					));
+			INDIVIDUAL_OVERALL_CHANGES.put(ent.getKey(), (float)individualOverallChange);
+		}
+		changesStats = new StatInfo( new ArrayList<Float>(INDIVIDUAL_OVERALL_CHANGES.values()));
+	}
+
+public static float calculatePercentChange(int tickerId, float start, float end) {
+		return (int)(100*(
+				(Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).floorEntry(end).getValue()[6])-Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).ceilingEntry(start).getValue()[6])
+				/(Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).ceilingEntry( start).getValue()[6]));
+		
+ 
 	}
 
 	private void fillTechnicals() {
@@ -156,28 +182,30 @@ public class Database implements Qi, Yi, DBLabels {
 	}
 
 	private static void doMarketSum() {
-ArrayList<String> validDataTickers = new ArrayList<String>();
-		for (Entry<String,TreeMap<Float, float[]>> individual : Database.TECHNICAL_PRICE_DATA
+		ArrayList<String> validDataTickers = new ArrayList<String>();
+		for (Entry<String, TreeMap<Float, float[]>> individual : Database.TECHNICAL_PRICE_DATA
 				.entrySet()) {
-			if(isAllDataValid(individual.getValue())){
+			if (isAllDataValid(individual.getValue())) {
 				validDataTickers.add(individual.getKey());
 			}
 		}
-		System.out.println("----------=====:::::::::>                         ----->)    "+validDataTickers.size());
-		for(String s: validDataTickers){
-		 
-			addToMarketSum( Database.TECHNICAL_PRICE_DATA.get(s));
+		System.out
+				.println("----------=====:::::::::>                         ----->)    "
+						+ validDataTickers.size());
+		for (String s : validDataTickers) {
+
+			addToMarketSum(Database.TECHNICAL_PRICE_DATA.get(s));
 		}
 	}
 
 	private static boolean isAllDataValid(TreeMap<Float, float[]> value) {
-		for(float[] f: value.values()){
-			for(float f1: f){ 
-				if(f1!=f1) { 
+		for (float[] f : value.values()) {
+			for (float f1 : f) {
+				if (f1 != f1) {
 					return false;
-			 
+
 				}
-				}
+			}
 		}
 		return true;
 	}
@@ -233,6 +261,7 @@ ArrayList<String> validDataTickers = new ArrayList<String>();
 		calculateChanges();
 		computeSuplementalFactors();
 		fillTechnicals();
+		mapChangesAndTheirStats(); 
 		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
 			SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
 			String formated = sdf.format(new Date(
