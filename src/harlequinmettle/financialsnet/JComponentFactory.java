@@ -319,7 +319,7 @@ public class JComponentFactory {
 		title+="   "+stdv;
 		if(stdv<100)title+=" ";
 		if(stdv<10)title+=" ";
-		title+="   |   ";
+		title+=" StdDev %d   |   ";
 		if(!Database.INDIVIDUAL_OVERALL_CHANGES.containsKey(a.getText().split(" ")[0]))
 			return;
 		int overallChange = (int)(float)Database.INDIVIDUAL_OVERALL_CHANGES.get(//
@@ -330,7 +330,7 @@ public class JComponentFactory {
 		title+=overallChange;
 		if(overallChange<100 && overallChange>-9)title+=" ";
 		if(overallChange<10 && overallChange>0)title+=" ";
-		title+="   |   ";
+		title+="%   |   ";
 		a.setText(title);
 	}
 
@@ -347,10 +347,11 @@ public class JComponentFactory {
 			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
 					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
 		//	int collectionDate = (int) Double.parseDouble(dates[0]);
+			//TODO: COMPARE TO MARKET NOT ABSOLUTE
 			float change = Database.calculatePercentChange(Database.dbSet.indexOf(ticker), earningsReportDate-10,earningsReportDate+2);	
-			int red =  (int)(50+change*3); 
-			int green =  (int)(40+change*3);
-			int blue =  (int)(100+change*10);
+			int red =  (int)(120+change*1); 
+			int green =  (int)(140+change*1);
+			int blue =  (int)(140+change*3);
 			if(red >254)red = 255;
 			if(green>254)green = 255;
 			if(blue>254)blue = 255;
@@ -358,7 +359,7 @@ public class JComponentFactory {
 			if(green<1)green = 1;
 			if(blue<1)blue = 1;
 			a.setBackground(new Color(red,green,blue));
-			String rename = a.getText()+change;
+			String rename = a.getText()+change + " % post report";
 			a.setText(rename);
 		}catch (Exception e){}
 	}
