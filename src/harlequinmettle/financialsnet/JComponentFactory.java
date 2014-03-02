@@ -348,7 +348,13 @@ public class JComponentFactory {
 					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
 		//	int collectionDate = (int) Double.parseDouble(dates[0]);
 			//TODO: COMPARE TO MARKET NOT ABSOLUTE
-			float change = Database.calculatePercentChange(Database.dbSet.indexOf(ticker), earningsReportDate-10,earningsReportDate+2);	
+			int daysBefore = 10;
+			int daysAfter = 2;
+			float beforeReport = earningsReportDate-daysBefore;
+			float afterReport = earningsReportDate+daysAfter;
+			float marketFactor = Database.calculateMarketChange( beforeReport,afterReport);	
+			float change = Database.calculatePercentChange(Database.dbSet.indexOf(ticker), beforeReport, afterReport);	
+			change = change - marketFactor;
 			int red =  (int)(120+change*1); 
 			int green =  (int)(140+change*1);
 			int blue =  (int)(140+change*3);
@@ -359,7 +365,7 @@ public class JComponentFactory {
 			if(green<1)green = 1;
 			if(blue<1)blue = 1;
 			a.setBackground(new Color(red,green,blue));
-			String rename = a.getText()+change + " % post report";
+			String rename = a.getText()+change + " % v mkt -"+daysBefore+", +"+daysAfter+" days ";
 			a.setText(rename);
 		}catch (Exception e){}
 	}

@@ -7,5 +7,6 @@
 			<attribute name="javadoc_location" value="jar:file:/home/andrew/Desktop/external%20java%20libraries/commons-io-2.4/commons-io-2.4-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/andrew/Desktop/external java libraries/commons-math3-3.2/commons-math3-3.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

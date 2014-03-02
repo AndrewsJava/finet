@@ -130,9 +130,14 @@ public static float calculatePercentChange(int tickerId, float start, float end)
 		return (int)(100*(
 				(Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).floorEntry(end).getValue()[6])-Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).ceilingEntry(start).getValue()[6])
 				/(Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).ceilingEntry( start).getValue()[6]));
-		
- 
-	}
+ 	}
+
+public static float calculateMarketChange(float start, float end) {
+	return (int)(100*(
+			(Database.SUM_MARKET_PRICE_DATA.floorEntry(end).getValue()[6])-Database.SUM_MARKET_PRICE_DATA.ceilingEntry(start).getValue()[6])
+			/(Database.SUM_MARKET_PRICE_DATA.ceilingEntry( start).getValue()[6]));
+	
+}
 
 	private void fillTechnicals() {
 		int better = 0;
