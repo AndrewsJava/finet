@@ -42,6 +42,8 @@ import javax.swing.border.Border;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.NameFileComparator;
 
+import ffttest.FFT;
+
 public class JComponentFactory {
 
 	public static final int HORIZONTAL = 8000000;
@@ -198,8 +200,8 @@ public class JComponentFactory {
 						CustomButton tickerButton = JComponentFactory
 								.doIndividualTickerButtonForPanel(s,
 										a.getText(), jf);
-						//tickerButton.setBackground(new Color(100,140,255));
-						tickerButton.setMinimumSize(new Dimension(300,45));
+						// tickerButton.setBackground(new Color(100,140,255));
+						tickerButton.setMinimumSize(new Dimension(300, 45));
 						stepScroll.addComp((tickerButton));
 					}
 				}
@@ -242,8 +244,9 @@ public class JComponentFactory {
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
 		addButtonDetails(a, marketCap, tickerLocation, buttonData);
 
-		colorButtonByPercentChangeAfterEarningsReport(a, buttonData,a.getText().split(" ")[0]);
-		
+		colorButtonByPercentChangeAfterEarningsReport(a, buttonData, a
+				.getText().split(" ")[0]);
+
 		a.setHorizontalAlignment(SwingConstants.LEFT);
 		a.addActionListener(new ActionListener() {
 			@Override
@@ -251,12 +254,14 @@ public class JComponentFactory {
 
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
-				jf.setExtendedState( jf.getExtendedState()|JFrame.MAXIMIZED_BOTH );
+				jf.setExtendedState(jf.getExtendedState()
+						| JFrame.MAXIMIZED_BOTH);
 				jf.setVisible(true);
-		//		closeMe.dispose();
+				// closeMe.dispose();
 				ProfileCanvas pc = new ProfileCanvas((buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
-
+				FFT fft = new FFT(Database.spawnTimeSeriesForFFT(s));
+				fft.showFrequencyGraph();
 				jf.addComponentListener(JComponentFactory
 						.doWindowRescaleListener(pc));
 				jf.add(JComponentFactory.makeJScrollPane(pc));
@@ -269,8 +274,10 @@ public class JComponentFactory {
 	private static void addButtonDetails(CustomButton a, double marketCap,
 			int tLoc, String buttonData) {
 		String title = a.getText();
-		if(title.length()<2)title+="  ";
-		if(title.length()<3)title+=" ";
+		if (title.length() < 2)
+			title += "  ";
+		if (title.length() < 3)
+			title += " ";
 		for (int i = 10; i > title.length(); i--) {
 			title += " ";
 		}
@@ -286,9 +293,9 @@ public class JComponentFactory {
 				.calculateWordRankAverage(t));
 		if (rankAverage < 100) {
 			title += "     L0";
-			if (rankAverage < 10)  
+			if (rankAverage < 10)
 				title += "0";
-		}   else {
+		} else {
 			title += "     L";
 		}
 		title += rankAverage + "T";
@@ -297,89 +304,109 @@ public class JComponentFactory {
 			title += " ";
 		}
 		title += "|";
-		TreeMap<Float,float[]> prices = 
-		Database.TECHNICAL_PRICE_DATA.get(title.split(" ")[0]);
+		TreeMap<Float, float[]> prices = Database.TECHNICAL_PRICE_DATA
+				.get(title.split(" ")[0]);
 		ArrayList<Float> priceChanges = new ArrayList<Float>();
 		float[] initial = prices.firstEntry().getValue();
 		boolean first = true;
-		for(Entry<Float,float[]> ent : prices.entrySet()	){
-			if(first){
+		for (Entry<Float, float[]> ent : prices.entrySet()) {
+			if (first) {
 				first = false;
 				continue;
 			}
 			float[] ending = ent.getValue();
-			float change = (ending[6]-initial[6])/initial[6];
+			float change = (ending[6] - initial[6]) / initial[6];
 			priceChanges.add(change);
 		}
-		StatInfo stat = new StatInfo(priceChanges,false);
-	//	float stdv = DataPointGraphic.roundTo(stat.standardDeviation, 3);
-		int stdv = (int)(1000*stat.standardDeviation);
-		//colorButtonBasedOnStandardDeviation(a, stdv);
-		if(stdv>=1000)stdv = 999;
-		title+="   "+stdv;
-		if(stdv<100)title+=" ";
-		if(stdv<10)title+=" ";
-		title+=" StdDev %d   |   ";
-		if(!Database.INDIVIDUAL_OVERALL_CHANGES.containsKey(a.getText().split(" ")[0]))
+		StatInfo stat = new StatInfo(priceChanges, false);
+		// float stdv = DataPointGraphic.roundTo(stat.standardDeviation, 3);
+		int stdv = (int) (1000 * stat.standardDeviation);
+		// colorButtonBasedOnStandardDeviation(a, stdv);
+		if (stdv >= 1000)
+			stdv = 999;
+		title += "   " + stdv;
+		if (stdv < 100)
+			title += " ";
+		if (stdv < 10)
+			title += " ";
+		title += " StdDev %d   |   ";
+		if (!Database.INDIVIDUAL_OVERALL_CHANGES.containsKey(a.getText().split(
+				" ")[0]))
 			return;
-		int overallChange = (int)(float)Database.INDIVIDUAL_OVERALL_CHANGES.get(//
+		int overallChange = (int) (float) Database.INDIVIDUAL_OVERALL_CHANGES
+				.get(//
 				a.getText()//
-				.split(" ")//
+						.split(" ")//
 				[0]);
-	//	colorButtonBasedOnOverallChange(a,overallChange);
-		title+=overallChange;
-		if(overallChange<100 && overallChange>-9)title+=" ";
-		if(overallChange<10 && overallChange>0)title+=" ";
-		title+="%   |   ";
+		// colorButtonBasedOnOverallChange(a,overallChange);
+		title += overallChange;
+		if (overallChange < 100 && overallChange > -9)
+			title += " ";
+		if (overallChange < 10 && overallChange > 0)
+			title += " ";
+		title += "%   |   ";
 		a.setText(title);
 	}
 
-	private static void colorButtonByPercentChangeAfterEarningsReport(CustomButton a,String dateInfo, String ticker) {
-	 
+	private static void colorButtonByPercentChangeAfterEarningsReport(
+			CustomButton a, String dateInfo, String ticker) {
+
 		String[] dates = dateInfo.split(" ");
 		if (dates.length < 2) {
 			System.out.println("\n\nARRAY IS SHORT : " + dateInfo + "  -->  "
 					+ Arrays.toString(dates));
 			return;
 		}
- 
+
 		try {
 			long earningsReportDate = EarningsTest.singleton.dateFormatForFile
 					.parse(dates[1]).getTime() / 1000 / 3600 / 24;
-		//	int collectionDate = (int) Double.parseDouble(dates[0]);
-			//TODO: COMPARE TO MARKET NOT ABSOLUTE
+			// int collectionDate = (int) Double.parseDouble(dates[0]);
+			// TODO: COMPARE TO MARKET NOT ABSOLUTE
 			int daysBefore = 10;
 			int daysAfter = 2;
-			float beforeReport = earningsReportDate-daysBefore;
-			float afterReport = earningsReportDate+daysAfter;
-			float marketFactor = Database.calculateMarketChange( beforeReport,afterReport);	
-			float change = Database.calculatePercentChange(Database.dbSet.indexOf(ticker), beforeReport, afterReport);	
+			float beforeReport = earningsReportDate - daysBefore;
+			float afterReport = earningsReportDate + daysAfter;
+			float marketFactor = Database.calculateMarketChange(beforeReport,
+					afterReport);
+			float change = Database.calculatePercentChange(
+					Database.dbSet.indexOf(ticker), beforeReport, afterReport);
 			change = change - marketFactor;
-			int red =  (int)(120+change*1); 
-			int green =  (int)(140+change*1);
-			int blue =  (int)(140+change*3);
-			if(red >254)red = 255;
-			if(green>254)green = 255;
-			if(blue>254)blue = 255;
-			if(red<1)red = 1;
-			if(green<1)green = 1;
-			if(blue<1)blue = 1;
-			a.setBackground(new Color(red,green,blue));
-			String rename = a.getText()+change + " % v mkt -"+daysBefore+", +"+daysAfter+" days ";
+			int red = (int) (120 + change * 1);
+			int green = (int) (140 + change * 1);
+			int blue = (int) (140 + change * 3);
+			if (red > 254)
+				red = 255;
+			if (green > 254)
+				green = 255;
+			if (blue > 254)
+				blue = 255;
+			if (red < 1)
+				red = 1;
+			if (green < 1)
+				green = 1;
+			if (blue < 1)
+				blue = 1;
+			a.setBackground(new Color(red, green, blue));
+			String rename = a.getText() + change + " % v mkt -" + daysBefore
+					+ ", +" + daysAfter + " days ";
 			a.setText(rename);
-		}catch (Exception e){}
+		} catch (Exception e) {
+		}
 	}
+
 	private static void colorButtonBasedOnOverallChange(CustomButton a,
 			int overallChange) {
-		System.out.println("overall market: "+Database.overallMarketChange);
-		System.out.println("median :            "+Database.changesStats.median);
-		
+		System.out.println("overall market: " + Database.overallMarketChange);
+		System.out.println("median :            "
+				+ Database.changesStats.median);
+
 	}
 
 	private static void colorButtonBasedOnStandardDeviation(CustomButton a,
 			int stdv) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	private static void addTabBuildingListener(final CustomButton a) {
@@ -485,7 +512,7 @@ public class JComponentFactory {
 		} else {
 			color = 150;
 			double today = EarningsTest.dayNumber();
-			while (today < earningsDate  ) {
+			while (today < earningsDate) {
 
 				color += 15;
 				if (color > 255)

@@ -10,7 +10,7 @@ import javax.swing.ScrollPaneConstants;
 
 public class WaveDisplay  {
 double [] data ;
-SineCanvas showWave;
+HorizontalGraph showWave;
 double scale = 1;
 public WaveDisplay(double[] data){
 this.data = data;
@@ -26,7 +26,7 @@ init(scale,offset);
 	
 public void init(double scale, double offset){
 	
-	    showWave = new SineCanvas(data);
+	    showWave = new HorizontalGraph(data);
 	showWave.setScale(scale);
 	showWave.setOffset(offset); 
 	JFrame display = new JFrame();

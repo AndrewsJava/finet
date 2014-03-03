@@ -163,7 +163,15 @@ public static float calculateMarketChange(float start, float end) {
 		System.out.println("\nbetter: " + better);
 		System.out.println("\nworse: " + worse);
 	}
-
+static double[] spawnTimeSeriesForFFT(String ticker){
+	TreeMap<Float, float[]> allTickerHistoricData = TECHNICAL_PRICE_DATA.get(ticker);
+	double[] priceData = new double[allTickerHistoricData.size()];
+	int i = 0;
+	for(float[] data: allTickerHistoricData.values()){
+		priceData[i++] = data[6]; 
+	}
+	return priceData;
+}
 	// ///////////
 
 	private boolean isDataBetter(float[][][] tech, int id, int i) {
