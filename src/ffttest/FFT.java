@@ -43,8 +43,10 @@ public class FFT {
 	public void showFrequencyGraph() {
 
 		HorizontalGraph showWave = new HorizontalGraph(transformedData);
+		showWave.setFrequencies(frequencies);
 		showWave.setOffset(300);
 		JFrame display = new JFrame();
+	display.setTitle("intended frame");
 		JScrollPane jsp = HorizontalGraph.makeJScrollPane(showWave);
 		//display.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		display.add(jsp);
@@ -84,7 +86,7 @@ public class FFT {
 
 			}
 
-			WaveDisplay frequency = new WaveDisplay(frequencyData, 0.02, 300);
+			//WaveDisplay frequency = new WaveDisplay(frequencyData, 0.02, 300);
 			// System.out.println(Arrays.toString(frequencyData));
 		} catch (IllegalArgumentException e) {
 			System.out.println(e);

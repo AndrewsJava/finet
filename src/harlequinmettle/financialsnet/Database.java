@@ -133,10 +133,15 @@ public static float calculatePercentChange(int tickerId, float start, float end)
  	}
 
 public static float calculateMarketChange(float start, float end) {
-	return (int)(100*(
+	int change = Integer.MAX_VALUE;
+	while(change == Integer.MAX_VALUE){
+	change = (int)(100*(
 			(Database.SUM_MARKET_PRICE_DATA.floorEntry(end).getValue()[6])-Database.SUM_MARKET_PRICE_DATA.ceilingEntry(start).getValue()[6])
 			/(Database.SUM_MARKET_PRICE_DATA.ceilingEntry( start).getValue()[6]));
-	
+	start--;
+	end++;
+	}
+	return change;
 }
 
 	private void fillTechnicals() {

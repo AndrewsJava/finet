@@ -167,10 +167,8 @@ public class JComponentFactory {
 
 		final CustomButton a = new CustomButton(reformatTitle(buttonTitle));
 		a.setHorizontalAlignment(SwingConstants.LEFT);
-		colorButton(a);
-		// addTabBuildingListener(a);
-		addButtonChoosePanelBuilderListener(a);
-		// ArrayList<String> tickers = getTickersFound(a.getText());
+		colorButton(a); 
+		addButtonChoosePanelBuilderListener(a); 
 
 		renameButton(a);
 		return a;
@@ -258,10 +256,11 @@ public class JComponentFactory {
 						| JFrame.MAXIMIZED_BOTH);
 				jf.setVisible(true);
 				// closeMe.dispose();
-				ProfileCanvas pc = new ProfileCanvas((buttonData),
-						tickerLocation, jf.getWidth(), jf.getHeight());
 				FFT fft = new FFT(Database.spawnTimeSeriesForFFT(s));
 				fft.showFrequencyGraph();
+				ProfileCanvas pc = new ProfileCanvas((buttonData),
+						tickerLocation, jf.getWidth(), jf.getHeight());
+
 				jf.addComponentListener(JComponentFactory
 						.doWindowRescaleListener(pc));
 				jf.add(JComponentFactory.makeJScrollPane(pc));
@@ -371,6 +370,8 @@ public class JComponentFactory {
 					afterReport);
 			float change = Database.calculatePercentChange(
 					Database.dbSet.indexOf(ticker), beforeReport, afterReport);
+			System.out.println("market calc: " + marketFactor);
+			System.out.println("change calc: " + change);
 			change = change - marketFactor;
 			int red = (int) (120 + change * 1);
 			int green = (int) (140 + change * 1);
@@ -683,6 +684,52 @@ public class JComponentFactory {
 		return a;
 	}
 
+	public static CustomButton doDescriptionSearchButton(
+			final JTextArea searchWords) {
+		final CustomButton a = new CustomButton("search");
+		final ArrayList<String> tickers = new ArrayList<String>();
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				JFrame searchResultFrame = new JFrame("Search Results: "+searchWords.getText());
+				searchResultFrame.setSize(1300, 650);
+				searchResultFrame.setVisible(true);
+				searchResultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				JScrollPanelledPane tickerScroll = new JScrollPanelledPane();
+				searchResultFrame.add(tickerScroll);
+				String reformated = format(searchWords.getText().toLowerCase());
+				String[] searchParams = reformated
+						.split(" ");
+				for (Entry<String, String> ent : Database.DESCRIPTIONS
+						.entrySet()) {
+					String ticker = ent.getKey();
+					String description = ent.getValue().toLowerCase();
+
+					for (String searcher : searchParams) {
+						if (description.contains(searcher)) {
+							CustomButton tickerButton = JComponentFactory
+									.doIndividualTickerButtonForPanel(ticker,
+											a.getText(),searchResultFrame);
+							// tickerButton.setBackground(new Color(100,140,255));
+							tickerButton.setMinimumSize(new Dimension(300, 45));
+							tickerScroll.addComp((tickerButton)); 
+						}
+					}
+				}
+
+			}
+
+			private String format(String lowerCase) {
+			while(lowerCase.contains("  ")){
+				lowerCase = lowerCase.replaceAll("  ", " ");
+			}
+				return lowerCase.trim();
+			}
+
+		}); 
+		return a;
+	}
+ 
 	public static CustomButton doFileMoveButton(final File dls) {
 		final String title = dls.getName();
 		final CustomButton a = new CustomButton(title);

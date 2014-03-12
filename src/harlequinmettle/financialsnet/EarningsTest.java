@@ -74,6 +74,13 @@ public class EarningsTest {
 	
 	static final TreeMap<String, File> MAP_TO_FILES = new TreeMap<String, File>();
 
+	final JLabel wordSearch = JComponentFactory
+			.doJLabel("words to search for (space separated)");
+	static final JTextArea wordsForSearch = JComponentFactory.doJTextArea();
+
+	final CustomButton submitSearchButton = JComponentFactory
+			.doDescriptionSearchButton(wordsForSearch);
+
 	static EarningsTest singleton;
 
 	public static void main(String[] args) throws Exception {
@@ -120,7 +127,22 @@ public class EarningsTest {
 		addDownloadsLocator(stepScroll);
 		addDatabaseLoadPanel(stepScroll);
 		addTextStatLauncherPanel(stepScroll);
+		addSearchProfilePanel(stepScroll);
 		return stepScroll;
+	}
+
+	private void addSearchProfilePanel(JScrollPanelledPane stepScroll) {
+		JPanel textSearch = JComponentFactory
+				.makePanel(JComponentFactory.HORIZONTAL);
+		
+
+ 
+		textSearch.add( wordSearch  );
+		textSearch.add( wordsForSearch  );
+		textSearch.add( submitSearchButton  );
+		
+		
+		stepScroll.addComp(textSearch);
 	}
 
 	private void addTextStatLauncherPanel(JScrollPanelledPane stepScroll) {
