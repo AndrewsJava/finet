@@ -6,6 +6,7 @@ public interface DBLabels {
 			"",// 
 		 
 			"Market Cap", // 0
+			"Dividends",//
 			"52-Week Change",// 30
 			"50-Day Moving Average",// ///////-----------69
 			"200-Day Moving Average",// 32 /-----------70
@@ -20,6 +21,23 @@ public interface DBLabels {
 			"Payout Ratio", // 43
 			"Beta",//
 			"Enterprise Value", //
+
+			"EPS Est 12 Mo Ago",// these 4 use
+			"EPS Est 9 Mo Ago",// these 4 use
+			"EPS Est 6 Mo Ago",// these 4 use
+			"EPS Est 3 Mo Ago",// these 4 use
+			"EPS Actual 12 Mo Ago", //
+			"EPS Actual 9 Mo Ago", //
+			"EPS Actual 6 Mo Ago", //
+			"EPS Actual 3 Mo Ago", //
+			"Difference 12 Mo Ago", //
+			"Difference 9 Mo Ago", //
+			"Difference 6 Mo Ago", //
+			"Difference 3 Mo Ago", //
+			"Surprise % 12 Mo Ago",//
+			"Surprise % 9 Mo Ago",//
+			"Surprise % 6 Mo Ago", ///
+			"Surprise % 3 Mo Ago",// ///////-----37
 			// /////////////////////////////
 			"Avg. Estimate Current Qt",// these 5 use
 			"Avg. Estimate Next Qt",// these 5 use
@@ -48,22 +66,6 @@ public interface DBLabels {
 			// Revenue
 			// Est
 
-			"EPS Est 12 Mo Ago",// these 4 use
-			"EPS Est 9 Mo Ago",// these 4 use
-			"EPS Est 6 Mo Ago",// these 4 use
-			"EPS Est 3 Mo Ago",// these 4 use
-			"EPS Actual 12 Mo Ago", //
-			"EPS Actual 9 Mo Ago", //
-			"EPS Actual 6 Mo Ago", //
-			"EPS Actual 3 Mo Ago", //
-			"Difference 12 Mo Ago", //
-			"Difference 9 Mo Ago", //
-			"Difference 6 Mo Ago", //
-			"Difference 3 Mo Ago", //
-			"Surprise % 12 Mo Ago",//
-			"Surprise % 9 Mo Ago",//
-			"Surprise % 6 Mo Ago", ///
-			"Surprise % 3 Mo Ago",// ///////-----37
 
 			// ////////////////////////////
 			"Enterprise Value/Revenue",// 7
@@ -98,7 +100,6 @@ public interface DBLabels {
 			"Shares Short (prior month)",//
 			"CNN analysts",// cnn - 0
 			// ///////////////////////////////////
-			"Dividends",//
 			"Split",//
 			"Options",//
 			// //////////////////////////// 

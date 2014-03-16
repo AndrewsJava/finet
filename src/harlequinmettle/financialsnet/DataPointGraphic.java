@@ -393,8 +393,11 @@ float scalingMultiple = 2.5f;
 			case 0:
 				pts.put(prices.getKey(), prices.getValue().x);
 				break;
-			case 1:
-				pts.put(prices.getKey(), prices.getValue().y);
+			case 1://market
+				float date = prices.getKey();
+				float totalValue = prices.getValue().y;
+				if(totalValue>1000)
+				pts.put(date,totalValue);
 				break;
 			}
 		}

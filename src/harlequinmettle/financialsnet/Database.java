@@ -134,7 +134,8 @@ public static float calculatePercentChange(int tickerId, float start, float end)
 
 public static float calculateMarketChange(float start, float end) {
 	int change = Integer.MAX_VALUE;
-	while(change == Integer.MAX_VALUE){
+	int tries = 0;
+	while(change > 10000 && tries++<4){
 	change = (int)(100*(
 			(Database.SUM_MARKET_PRICE_DATA.floorEntry(end).getValue()[6])-Database.SUM_MARKET_PRICE_DATA.ceilingEntry(start).getValue()[6])
 			/(Database.SUM_MARKET_PRICE_DATA.ceilingEntry( start).getValue()[6]));
