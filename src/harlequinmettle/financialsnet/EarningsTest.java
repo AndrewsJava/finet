@@ -26,10 +26,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.NameFileComparator;
 
 public class EarningsTest {
-	//TODO: distribution of word rank
-	//TODO: save number of tickers/file  
-	//TODO: organize access to buttons/colorize
-	//TODO: limit dates/extend dates to expected report date
+	// TODO: distribution of word rank
+	// TODO: save number of tickers/file
+	// TODO: organize access to buttons/colorize
+	// TODO: limit dates/extend dates to expected report date
 	static ProgramSettings programSettings;
 	static Database db;
 	final String qTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download";
@@ -64,23 +64,24 @@ public class EarningsTest {
 	final CustomButton buttonBrowseDownloadsFiles = JComponentFactory
 			.doPathBrowseButton(PATH_DOWNLOADS);
 
-	
 	final JCheckBox autoLoad = new JCheckBox("automatically load database");
-	
 
 	final JLabel daysToDownload = JComponentFactory
 			.doJLabel("number of days to request expected reports: ");
 	static final JTextArea DAYS_OF_REPORTS = JComponentFactory.doJTextArea();
-	
+
 	static final TreeMap<String, File> MAP_TO_FILES = new TreeMap<String, File>();
 
 	final JLabel wordSearch = JComponentFactory
-			.doJLabel("words to search for (space separated)");
+			.doJLabel("words to search for (space separated) (\"statistics\"== all)");
 	static final JTextArea wordsForSearch = JComponentFactory.doJTextArea();
 
 	final CustomButton submitSearchButton = JComponentFactory
 			.doDescriptionSearchButton(wordsForSearch);
-
+	final FilterPanel filter_one = new FilterPanel();
+	final FilterPanel filter_two = new FilterPanel();
+	final FilterPanel filter_three = new FilterPanel();
+	final FilterPanel[] filters = {filter_one,filter_two,filter_three};
 	static EarningsTest singleton;
 
 	public static void main(String[] args) throws Exception {
@@ -92,7 +93,7 @@ public class EarningsTest {
 		// TODO: add dates to price/volume graph
 		// TODO: merge idential files / double gae output
 		File resources = new File(REPORTS_ROOT);
-		if(!resources.exists())
+		if (!resources.exists())
 			resources.mkdir();
 		singleton = this;
 		programSettings = MemoryManager.restoreSettings();
@@ -106,17 +107,18 @@ public class EarningsTest {
 
 		application.add(gui);
 		setUpTabs();
-		for(Entry<String,ArrayList<String>> x: EarningsTest.singleton.programSettings.tickersActual.entrySet())
+		for (Entry<String, ArrayList<String>> x : EarningsTest.singleton.programSettings.tickersActual
+				.entrySet())
 			System.out.println(x);
 	}
 
 	private void setUpTabs() {
 		PATH_SOURCE.setText(programSettings.rootPathToTextDatabase);
 		PATH_DOWNLOADS.setText(programSettings.rootPathToDownloads);
-		 DAYS_OF_REPORTS.setText(""+programSettings.daysOfReportsToDownload);
+		DAYS_OF_REPORTS.setText("" + programSettings.daysOfReportsToDownload);
 		gui.removeAll();
 		JScrollPanelledPane appTab = setUpControlsTab();
-		gui.add("controlls", appTab);		  
+		gui.add("controlls", appTab);
 	}
 
 	private JScrollPanelledPane setUpControlsTab() {
@@ -128,20 +130,24 @@ public class EarningsTest {
 		addDatabaseLoadPanel(stepScroll);
 		addTextStatLauncherPanel(stepScroll);
 		addSearchProfilePanel(stepScroll);
+		addFilterPanel(stepScroll);
 		return stepScroll;
+	}
+
+	private void addFilterPanel(JScrollPanelledPane stepScroll) {
+		for(FilterPanel f: filters)
+		stepScroll.addComp(f);
 	}
 
 	private void addSearchProfilePanel(JScrollPanelledPane stepScroll) {
 		JPanel textSearch = JComponentFactory
 				.makePanel(JComponentFactory.HORIZONTAL);
-		
 
- 
-		textSearch.add( wordSearch  );
-		textSearch.add( wordsForSearch  );
-		textSearch.add( submitSearchButton  );
-		
-		
+		wordsForSearch.setText("statistics");
+		textSearch.add(wordSearch);
+		textSearch.add(wordsForSearch);
+		textSearch.add(submitSearchButton);
+
 		stepScroll.addComp(textSearch);
 	}
 
@@ -172,10 +178,8 @@ public class EarningsTest {
 		buttonGatherNextEarningsReports
 				.addActionListener(makeGatherNextSetButtonListener());
 
-	 
-		 
-		stepScroll.addComp(JComponentFactory
-				.generatePanel(daysToDownload ,DAYS_OF_REPORTS,buttonGatherNextEarningsReports));
+		stepScroll.addComp(JComponentFactory.generatePanel(daysToDownload,
+				DAYS_OF_REPORTS, buttonGatherNextEarningsReports));
 	}
 
 	private ActionListener makeMoveFilesButtonListener() {
@@ -227,9 +231,9 @@ public class EarningsTest {
 			confirmLoad.setSelected(true);
 			confirmLoad.setEnabled(false);
 			loadDB.setEnabled(false);
-			JComponentFactory.startLoadingDataBase(); 
-		//	JComponentFactory.addReportsTab();
-		}else{ 
+			JComponentFactory.startLoadingDataBase();
+			// JComponentFactory.addReportsTab();
+		} else {
 			autoLoad.setSelected(false);
 		}
 		dbLoad.add(autoLoad);
@@ -280,13 +284,14 @@ public class EarningsTest {
 				programSettings.rootPathToTextDatabase = PATH_SOURCE.getText();
 
 				programSettings.rootPathToDownloads = PATH_DOWNLOADS.getText();
-				
+
 				programSettings.autoLoadDatabase = autoLoad.isSelected();
-try{
-				programSettings.daysOfReportsToDownload = Integer.parseInt(DAYS_OF_REPORTS.getText());
-}catch(Exception e){
-	
-}
+				try {
+					programSettings.daysOfReportsToDownload = Integer
+							.parseInt(DAYS_OF_REPORTS.getText());
+				} catch (Exception e) {
+
+				}
 				MemoryManager.saveSettings();
 
 			}
@@ -375,8 +380,8 @@ try{
 						+ date + ".html"; // /
 
 				try {
-					File htmlFile = new File(REPORTS_ROOT + dayString() + "_URL_"
-							+ dateFileFormat + ".html");
+					File htmlFile = new File(REPORTS_ROOT + dayString()
+							+ "_URL_" + dateFileFormat + ".html");
 					FileUtils.copyURLToFile(new URL(earnings), htmlFile);
 					System.out.println(new SimpleDateFormat("EEE")
 							.format(calendar.getTime()) + "      " + earnings);
@@ -408,8 +413,8 @@ try{
 						+ date + ".html"; // /
 
 				try {
-					File htmlFile = new File(REPORTS_ROOT + dayString() + "_URL_"
-							+ date + ".html");
+					File htmlFile = new File(REPORTS_ROOT + dayString()
+							+ "_URL_" + date + ".html");
 					FileUtils.copyURLToFile(new URL(earnings), htmlFile);
 					System.out.println(new SimpleDateFormat("EEE").format(days)
 							+ "      " + earnings);
@@ -469,17 +474,17 @@ try{
 		// limit to one decimal place
 		time = (double) ((int) (time * 10) / 10.0);
 
-		return  time;
+		return time;
 		//
 	}
 
 	private void saveCurrentTickers() {
 
 		try {
-			FileUtils.copyURLToFile(new URL(qTickerDownloadSite), new File(REPORTS_ROOT
-					+ fileTitle("NASDAq")));
-			FileUtils.copyURLToFile(new URL(yTickerDownloadSite), new File(REPORTS_ROOT
-					+ fileTitle("NySE")));
+			FileUtils.copyURLToFile(new URL(qTickerDownloadSite), new File(
+					REPORTS_ROOT + fileTitle("NASDAq")));
+			FileUtils.copyURLToFile(new URL(yTickerDownloadSite), new File(
+					REPORTS_ROOT + fileTitle("NySE")));
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

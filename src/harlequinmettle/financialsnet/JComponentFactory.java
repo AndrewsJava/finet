@@ -1,7 +1,6 @@
 package harlequinmettle.financialsnet;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -9,23 +8,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -54,6 +46,8 @@ public class JComponentFactory {
 			.createLineBorder(Color.black);
 	public static final Border CUSTOMBORDER = BorderFactory
 			.createLineBorder(new Color(100, 220, 245));
+	protected static final int NON_EARNINGS_REPORT = 111000111;
+	protected static final int EARNINGS_REPORT = 111000888;
 
 	public static JScrollPane makeTextScroll(JTextArea jta) {
 		JScrollPane textScroll = new JScrollPane();
@@ -167,8 +161,8 @@ public class JComponentFactory {
 
 		final CustomButton a = new CustomButton(reformatTitle(buttonTitle));
 		a.setHorizontalAlignment(SwingConstants.LEFT);
-		colorButton(a); 
-		addButtonChoosePanelBuilderListener(a); 
+		colorButton(a);
+		addButtonChoosePanelBuilderListener(a);
 
 		renameButton(a);
 		return a;
@@ -197,7 +191,7 @@ public class JComponentFactory {
 						actual.add(s);
 						CustomButton tickerButton = JComponentFactory
 								.doIndividualTickerButtonForPanel(s,
-										a.getText(), jf);
+										a.getText(), jf, EARNINGS_REPORT);
 						// tickerButton.setBackground(new Color(100,140,255));
 						tickerButton.setMinimumSize(new Dimension(300, 45));
 						stepScroll.addComp((tickerButton));
@@ -235,15 +229,22 @@ public class JComponentFactory {
 	}
 
 	private static CustomButton doIndividualTickerButtonForPanel(
-			final String s, final String buttonData, final JFrame closeMe) {
-		final CustomButton a = new CustomButton((s));
+			final String ticker, final String buttonData, final JFrame closeMe,
+			int type) {
+		final CustomButton a = new CustomButton((ticker));
 		a.setPreferredSize(new Dimension(60, 20));
-		final int tickerLocation = Database.dbSet.indexOf(s);
+		final int tickerLocation = Database.dbSet.indexOf(ticker);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
 		addButtonDetails(a, marketCap, tickerLocation, buttonData);
-
-		colorButtonByPercentChangeAfterEarningsReport(a, buttonData, a
-				.getText().split(" ")[0]);
+		if(meetsFilter(ticker)){
+		if (type == EARNINGS_REPORT) {
+			colorButtonByPercentChangeAfterEarningsReport(a, buttonData, a
+					.getText().split(" ")[0]);
+		} else if (type == NON_EARNINGS_REPORT) {
+			colorButtonByOverallChange(a, ticker);
+		}}else{ 
+			a.setBackground(Color.DARK_GRAY);
+		}
 
 		a.setHorizontalAlignment(SwingConstants.LEFT);
 		a.addActionListener(new ActionListener() {
@@ -256,7 +257,7 @@ public class JComponentFactory {
 						| JFrame.MAXIMIZED_BOTH);
 				jf.setVisible(true);
 				// closeMe.dispose();
-				FFT fft = new FFT(Database.spawnTimeSeriesForFFT(s));
+				FFT fft = new FFT(Database.spawnTimeSeriesForFFT(ticker));
 				fft.showFrequencyGraph();
 				ProfileCanvas pc = new ProfileCanvas((buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
@@ -268,6 +269,23 @@ public class JComponentFactory {
 
 		});
 		return a;
+	}
+
+	private static boolean meetsFilter(String ticker) {
+		boolean fits = true;
+		
+	for(FilterPanel fp : EarningsTest.singleton.filters){
+		if(!fp.include.isSelected())continue;
+		int id = fp.getId();
+		float low = fp.getLow();
+		float high = fp.getHigh();
+		float currentDataPoint = Database.DB_ARRAY.lastEntry().getValue()[Database.dbSet.indexOf(ticker)][id];
+		
+		if(currentDataPoint<low || currentDataPoint>high	)
+			return false;
+		
+	}
+		return fits;
 	}
 
 	private static void addButtonDetails(CustomButton a, double marketCap,
@@ -396,18 +414,35 @@ public class JComponentFactory {
 		}
 	}
 
-	private static void colorButtonBasedOnOverallChange(CustomButton a,
-			int overallChange) {
-		System.out.println("overall market: " + Database.overallMarketChange);
-		System.out.println("median :            "
-				+ Database.changesStats.median);
+	private static void colorButtonByOverallChange(CustomButton a, String ticker) {
 
-	}
+		Float overallChange = Database.INDIVIDUAL_OVERALL_CHANGES.get(ticker);
+		if (overallChange == null)
+			return;
+		float marketChange = Database.calculateMarketChange(0, Float.MAX_VALUE);
 
-	private static void colorButtonBasedOnStandardDeviation(CustomButton a,
-			int stdv) {
-		// TODO Auto-generated method stub
-
+		System.out.println("ticker calc: (" + ticker + ")" + overallChange);
+		System.out.println("market calc: " + marketChange);
+		float diff = overallChange - marketChange;
+		int red = (int) (120 + diff * 1);
+		int green = (int) (140 + diff * 3);
+		int blue = (int) (140 + diff * 2);
+		if (red > 254)
+			red = 255;
+		if (green > 254)
+			green = 255;
+		if (blue > 254)
+			blue = 255;
+		if (red < 1)
+			red = 1;
+		if (green < 1)
+			green = 1;
+		if (blue < 1)
+			blue = 1;
+		a.setBackground(new Color(red, green, blue));
+		String bText = a.getText();
+		bText += " v Mkt: " + diff;
+		a.setText(bText);
 	}
 
 	private static void addTabBuildingListener(final CustomButton a) {
@@ -691,15 +726,16 @@ public class JComponentFactory {
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				JFrame searchResultFrame = new JFrame("Search Results: "+searchWords.getText());
+				JFrame searchResultFrame = new JFrame("Search Results: "
+						+ searchWords.getText());
 				searchResultFrame.setSize(1300, 650);
 				searchResultFrame.setVisible(true);
-				searchResultFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				searchResultFrame
+						.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				JScrollPanelledPane tickerScroll = new JScrollPanelledPane();
 				searchResultFrame.add(tickerScroll);
 				String reformated = format(searchWords.getText().toLowerCase());
-				String[] searchParams = reformated
-						.split(" ");
+				String[] searchParams = reformated.split(" ");
 				for (Entry<String, String> ent : Database.DESCRIPTIONS
 						.entrySet()) {
 					String ticker = ent.getKey();
@@ -709,10 +745,12 @@ public class JComponentFactory {
 						if (description.contains(searcher)) {
 							CustomButton tickerButton = JComponentFactory
 									.doIndividualTickerButtonForPanel(ticker,
-											a.getText(),searchResultFrame);
-							// tickerButton.setBackground(new Color(100,140,255));
+											a.getText(), searchResultFrame,
+											NON_EARNINGS_REPORT);
+							// tickerButton.setBackground(new
+							// Color(100,140,255));
 							tickerButton.setMinimumSize(new Dimension(300, 45));
-							tickerScroll.addComp((tickerButton)); 
+							tickerScroll.addComp((tickerButton));
 						}
 					}
 				}
@@ -720,16 +758,16 @@ public class JComponentFactory {
 			}
 
 			private String format(String lowerCase) {
-			while(lowerCase.contains("  ")){
-				lowerCase = lowerCase.replaceAll("  ", " ");
-			}
+				while (lowerCase.contains("  ")) {
+					lowerCase = lowerCase.replaceAll("  ", " ");
+				}
 				return lowerCase.trim();
 			}
 
-		}); 
+		});
 		return a;
 	}
- 
+
 	public static CustomButton doFileMoveButton(final File dls) {
 		final String title = dls.getName();
 		final CustomButton a = new CustomButton(title);
