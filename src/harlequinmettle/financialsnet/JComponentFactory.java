@@ -257,8 +257,10 @@ public class JComponentFactory {
 						| JFrame.MAXIMIZED_BOTH);
 				jf.setVisible(true);
 				// closeMe.dispose();
+				if(EarningsTest.singleton.showFFT.isSelected()){
 				FFT fft = new FFT(Database.spawnTimeSeriesForFFT(ticker));
 				fft.showFrequencyGraph();
+				}
 				ProfileCanvas pc = new ProfileCanvas((buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
 

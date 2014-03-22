@@ -34,16 +34,16 @@ public class DataPointGraphic {
 	public static Color FAINT_RED = new Color(200, 30, 30, 150);
 	public static Color FAINT_GREEN = new Color(30, 200, 30, 150);
 
-//	public static Color FAINT_WHITE = new Color(220, 220, 220, 150);
-  public static Color FAINT_BLACK = new Color(20, 20, 20, 180);
+	// public static Color FAINT_WHITE = new Color(220, 220, 220, 150);
+	public static Color FAINT_BLACK = new Color(20, 20, 20, 180);
 
 	public static Color COLOR_HISTOGRAM_BAR_THIS = new Color(200, 200, 200, 150);
 	public static Color COLOR_HISTOGRAM_BAR = new Color(100, 100, 250, 150);
 	public static Color COLOR_HISTOGRAM_BAR_VOL = new Color(55, 95, 230, 100);
-	
 
-	private static final Color MARKET_VALUE = Color.white;//new Color(50, 150, 150, 90);
-	
+	private static final Color MARKET_VALUE = Color.white;// new Color(50, 150,
+															// 150, 90);
+
 	private static final TreeMap<Integer, Color> COLOR_MAP;
 	static {
 		COLOR_MAP = new TreeMap<Integer, Color>();
@@ -130,11 +130,10 @@ public class DataPointGraphic {
 				+ graphicRank * PIXELS_BORDER + graphicRank * PIXELS_HEIGHT,
 				eWidth - 2 * PIXELS_BORDER, PIXELS_HEIGHT * verticalSizeInt);
 
+		graphicRank += verticalSizeInt;
 		if (general) {
-			graphicRank += verticalSizeInt;
 			setUpGeneralGraphData();
 		} else {
-			graphicRank += verticalSizeInt;
 			setUpTechnicalsGraphData();
 		}
 
@@ -185,17 +184,62 @@ public class DataPointGraphic {
 				.get(Database.dbSet.get(id));
 		TreeMap<Float, Point2D.Float> marketToStockPairing = pairPriceWithMarketByDate(
 				technicals, 6);
-		TreeMap<Float, Float> stockPrices = makeListFromPricePair(
-				marketToStockPairing, 0);
-		TreeMap<Float, Float> marketValue = makeListFromPricePair(
-				marketToStockPairing, 1);
+		TreeMap<Float, Float> stockPrices = new TreeMap<Float, Float>();
+		TreeMap<Float, Float> marketValue = new TreeMap<Float, Float>();
+		boolean averaging = EarningsTest.singleton.useAveraging.isSelected();
+		if (averaging) {
+			int neighborRange = EarningsTest.singleton.daysChoice.getSelectedIndex();
+			stockPrices = makeAverageListFromPricePair(marketToStockPairing, 0,
+					neighborRange);
+			marketValue = makeAverageListFromPricePair(marketToStockPairing, 1,
+					neighborRange);
+		} else {
+			stockPrices = makeListFromPricePair(marketToStockPairing, 0);
+			marketValue = makeListFromPricePair(marketToStockPairing, 1);
+		}
 		bars = createVolumeBars(technicals);
 
-		marketTimePath = makePathFromData(marketValue,MARKET);
+		marketTimePath = makePathFromData(marketValue, MARKET);
 		timePathPoints.clear();
-		timePath = makePathFromData(stockPrices,INDIVIDUAL);
+		timePath = makePathFromData(stockPrices, INDIVIDUAL);
 		// depends on timePathPoints
 		generatePercentComparisonLines(marketToStockPairing);
+	}
+
+	private TreeMap<Float, Float> makeAverageListFromPricePair(
+			TreeMap<Float, java.awt.geom.Point2D.Float> priceByDate, int id,
+			int neighborsToCount) {
+
+		//ensure values for start/end points 
+		TreeMap<Float, Float> pts = makeListFromPricePair(priceByDate,id) ;
+
+		ArrayList<Float> days = new ArrayList<Float>(priceByDate.keySet());
+		ArrayList<java.awt.geom.Point2D.Float> prices = new ArrayList<java.awt.geom.Point2D.Float>(
+				priceByDate.values());
+ 
+		
+		for (int J = neighborsToCount; J < (days.size() - neighborsToCount); J++) {
+			float sum = 0;
+			int n = 0;
+			for (int L = J - neighborsToCount; L <= J + 1 + 2 * neighborsToCount && L<prices.size(); L++) {
+n++;
+				switch (id) {
+				case 0:
+					//pts.put(days.get(L),  prices.get(L).x);
+					sum += prices.get(L).x;
+					break;
+				case 1:// market
+					//pts.put(days.get(L),  prices.get(L).y);
+					sum += prices.get(L).y;
+					break;
+				}
+			}
+			float average = sum/n;
+			System.out.println("s   " + sum);
+			System.out.println("av " +average);
+			pts.put(days.get(J), average);
+		}
+		return pts;
 	}
 
 	private void generatePercentComparisonLines(
@@ -222,7 +266,9 @@ public class DataPointGraphic {
 			// "percent change comparison:   "+individualToMarketDelta);
 
 			Point2D.Float startPoint = timePathPoints.get(ent.getKey());
-float scalingMultiple = 2.5f;
+			if(startPoint==null)
+				continue;
+			float scalingMultiple = 2.5f;
 			float individualX = startPoint.x;
 			float individualY = startPoint.y;
 
@@ -232,7 +278,8 @@ float scalingMultiple = 2.5f;
 			Line2D.Float comparisonLineMarket = new Line2D.Float(individualX,
 					individualY, changeX, changeY);
 
-			float changeYindividual = individualY - individualDelta * scalingMultiple;
+			float changeYindividual = individualY - individualDelta
+					* scalingMultiple;
 
 			Line2D.Float comparisonLineIndividual = new Line2D.Float(
 					individualX, individualY, changeX, changeYindividual);
@@ -313,8 +360,9 @@ float scalingMultiple = 2.5f;
 
 		}
 
-		timePath = makePathFromData(makeListFromPointInArray(
-				timeSeriesCompayData, categoryId),INDIVIDUAL);
+		timePath = makePathFromData(
+				makeListFromPointInArray(timeSeriesCompayData, categoryId),
+				INDIVIDUAL);
 
 		setMinMaxHistogramHighlight();
 	}
@@ -345,7 +393,7 @@ float scalingMultiple = 2.5f;
 		return max;
 	}
 
-	  static float roundTo(float numberToRound, int placesToRoundTo) {
+	static float roundTo(float numberToRound, int placesToRoundTo) {
 		return new BigDecimal(numberToRound).round(
 				new MathContext(placesToRoundTo)).floatValue();
 	}
@@ -393,31 +441,36 @@ float scalingMultiple = 2.5f;
 			case 0:
 				pts.put(prices.getKey(), prices.getValue().x);
 				break;
-			case 1://market
+			case 1:// market
 				float date = prices.getKey();
 				float totalValue = prices.getValue().y;
-				if(totalValue>1000)
-				pts.put(date,totalValue);
+				// if market sum is less than 1000 there is a data problem so
+				// dont add the point
+				if (totalValue > 1000)
+					pts.put(date, totalValue);
 				break;
 			}
 		}
 		return pts;
 	}
 
-	private GeneralPath makePathFromData(TreeMap<Float, Float> pts,int TYPE) {
+	private GeneralPath makePathFromData(TreeMap<Float, Float> pts, int TYPE) {
 		GeneralPath trend = new GeneralPath();
 		timePathPoints.clear();
 		// /////////////////////
 		float minimumPt = roundTo(min(new ArrayList<Float>(pts.values())), 3);
 		float maximumPt = roundTo(max(new ArrayList<Float>(pts.values())), 3);
-		if(TYPE == INDIVIDUAL){
+		if (TYPE == INDIVIDUAL) {
 			minMaxLine = new Point2D.Float(minimumPt, maximumPt);
-			startFinishTicker = new Point2D.Float(pts.firstEntry().getValue(),pts.lastEntry().getValue());
-		}if(TYPE == MARKET){
+			startFinishTicker = new Point2D.Float(pts.firstEntry().getValue(),
+					pts.lastEntry().getValue());
+		}
+		if (TYPE == MARKET) {
 			minMaxMarket = new Point2D.Float(minimumPt, maximumPt);
-			startFinishMarket = new Point2D.Float(pts.firstEntry().getValue(),pts.lastEntry().getValue());
+			startFinishMarket = new Point2D.Float(pts.firstEntry().getValue(),
+					pts.lastEntry().getValue());
 		}// System.out.println(category + " range: " + minimumPt + "   ---   "
-		// + maximumPt);
+			// + maximumPt);
 		float range = maximumPt - minimumPt;
 		float vertScaling = (PIXELS_HEIGHT * verticalSizeInt) / range;
 
@@ -430,9 +483,9 @@ float scalingMultiple = 2.5f;
 
 			float ypt = top + PIXELS_HEIGHT * verticalSizeInt
 					- (vertScaling * (f - minimumPt));
-			if (!general){
-				if(TYPE== INDIVIDUAL)
-				timePathPoints.put(date, new Point2D.Float(xpt, ypt));
+			if (!general) {
+				if (TYPE == INDIVIDUAL)
+					timePathPoints.put(date, new Point2D.Float(xpt, ypt));
 			}
 			if (i == 0) {
 				trend.moveTo(xpt, ypt);
@@ -532,24 +585,25 @@ float scalingMultiple = 2.5f;
 		g.setColor(new Color(20, 20, 10 + 10 * 19));
 		g.draw(border);
 
-		if(!general){ 
+		if (!general) {
 
-			g.setColor(new Color(100,100,200,200));
-			g.setFont(new Font("Sans-Serif",Font.ITALIC, 17));
+			g.setColor(new Color(100, 100, 200, 200));
+			g.setFont(new Font("Sans-Serif", Font.ITALIC, 17));
 			int top = 25;
 			int left = 22;
 			int inc = 25;
-			g.drawString("total variability: " ,left , top);
-			float marketPercentChange  = (int)(100*(minMaxMarket.y-minMaxMarket.x)/minMaxMarket.x);
-			g.drawString("market: " + marketPercentChange,left,top+inc);
-			float individualPercentChange  = (int)(100*(minMaxLine.y-minMaxLine.x)/minMaxLine.x);
-			g.drawString(ticker+ ": " + individualPercentChange,left,top+inc*2);
-			
-			g.drawString("overall change: " ,left , top+inc*4);
-			float market   = (int)(100*(startFinishMarket.y-startFinishMarket.x)/startFinishMarket.x);
-			g.drawString("market: " + market,left,top+inc*5);
-			float individual   = (int)(100*(startFinishTicker.y-startFinishTicker.x)/startFinishTicker.x);
-			g.drawString(ticker+ ": " + individual,left,top+inc*6);
+			g.drawString("total variability: ", left, top);
+			float marketPercentChange = (int) (100 * (minMaxMarket.y - minMaxMarket.x) / minMaxMarket.x);
+			g.drawString("market: " + marketPercentChange, left, top + inc);
+			float individualPercentChange = (int) (100 * (minMaxLine.y - minMaxLine.x) / minMaxLine.x);
+			g.drawString(ticker + ": " + individualPercentChange, left, top
+					+ inc * 2);
+
+			g.drawString("overall change: ", left, top + inc * 4);
+			float market = (int) (100 * (startFinishMarket.y - startFinishMarket.x) / startFinishMarket.x);
+			g.drawString("market: " + market, left, top + inc * 5);
+			float individual = (int) (100 * (startFinishTicker.y - startFinishTicker.x) / startFinishTicker.x);
+			g.drawString(ticker + ": " + individual, left, top + inc * 6);
 		}
 
 		if (general) {
@@ -570,9 +624,9 @@ float scalingMultiple = 2.5f;
 			g.setColor(MARKET_VALUE);
 			g.draw(marketTimePath);
 			g.setStroke(s);
- 
-				drawPriceRangeWindows(g);
-		} 
+
+			drawPriceRangeWindows(g);
+		}
 
 	}
 
@@ -600,17 +654,17 @@ float scalingMultiple = 2.5f;
 
 	private void drawPriceRangeWindows(Graphics2D g) {
 
-		 g.setColor(FAINT_BLACK);
-		 g.fillRect((int)eWidth- 65,PIXELS_BORDER,60,PIXELS_HEIGHT+25);
-			g.setColor(MARKET_VALUE);
+		g.setColor(FAINT_BLACK);
+		g.fillRect((int) eWidth - 65, PIXELS_BORDER, 60, PIXELS_HEIGHT + 25);
+		g.setColor(MARKET_VALUE);
 
-			g.drawString("" + minMaxMarket.x/1000, eWidth - 60, top + PIXELS_HEIGHT
-					- PIXELS_BORDER+20);
-			g.drawString("" + minMaxMarket.y/1000, eWidth - 60, top + 13+20);
+		g.drawString("" + minMaxMarket.x / 1000, eWidth - 60, top
+				+ PIXELS_HEIGHT - PIXELS_BORDER + 20);
+		g.drawString("" + minMaxMarket.y / 1000, eWidth - 60, top + 13 + 20);
 
-			g.drawString("" + minMaxLine.x, eWidth - 60, top + PIXELS_HEIGHT
-					- PIXELS_BORDER);
-			g.drawString("" + minMaxLine.y, eWidth - 60, top + 13);
+		g.drawString("" + minMaxLine.x, eWidth - 60, top + PIXELS_HEIGHT
+				- PIXELS_BORDER);
+		g.drawString("" + minMaxLine.y, eWidth - 60, top + 13);
 		// g.fillRect(W - 110, H - 4 * PART - 0, 90, 40);
 		// g.setColor(new Color(205, 00, 205));
 		// g.drawString("" + priceRange.x, W - 100, H - 55);

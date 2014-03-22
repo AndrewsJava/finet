@@ -1,5 +1,7 @@
 package harlequinmettle.financialsnet;
 
+import harlequinmettle.financialsnet.interfaces.DBLabels;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -15,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -65,6 +68,8 @@ public class EarningsTest {
 			.doPathBrowseButton(PATH_DOWNLOADS);
 
 	final JCheckBox autoLoad = new JCheckBox("automatically load database");
+	
+	final JCheckBox showFFT = new JCheckBox("show fft results technical data",false);
 
 	final JLabel daysToDownload = JComponentFactory
 			.doJLabel("number of days to request expected reports: ");
@@ -82,6 +87,12 @@ public class EarningsTest {
 	final FilterPanel filter_two = new FilterPanel();
 	final FilterPanel filter_three = new FilterPanel();
 	final FilterPanel[] filters = {filter_one,filter_two,filter_three};
+	
+
+	Integer[] daysAround = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+	JComboBox<Integer> daysChoice = new JComboBox<Integer>(daysAround);
+	final JCheckBox useAveraging = new JCheckBox("average price (days)",true);
+	
 	static EarningsTest singleton;
 
 	public static void main(String[] args) throws Exception {
@@ -157,6 +168,9 @@ public class EarningsTest {
 
 		textExplor.add(JComponentFactory
 				.makeTextExplorerLauchButton("Explor Text Stats"));
+		
+		textExplor.add(useAveraging);
+		textExplor.add(daysChoice);
 		stepScroll.addComp(textExplor);
 	}
 
@@ -239,6 +253,7 @@ public class EarningsTest {
 		dbLoad.add(autoLoad);
 		dbLoad.add(confirmLoad);
 		dbLoad.add(loadDB);
+		dbLoad.add(showFFT);
 		stepScroll.addComp(dbLoad);
 	}
 
