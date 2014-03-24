@@ -234,9 +234,7 @@ n++;
 					break;
 				}
 			}
-			float average = sum/n;
-			System.out.println("s   " + sum);
-			System.out.println("av " +average);
+			float average = sum/n; 
 			pts.put(days.get(J), average);
 		}
 		return pts;

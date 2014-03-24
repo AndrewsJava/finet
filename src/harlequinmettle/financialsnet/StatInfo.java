@@ -261,9 +261,9 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 
 		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
 			// change in market forward 1wk
-			if (!Database.MARKETCHANGE.containsKey(ent.getKey()))
+			if (!Database.WEEKLY_MARKETCHANGE.containsKey(ent.getKey()))
 				continue;
-			float marketChange = Database.MARKETCHANGE.get(ent.getKey());
+			float marketChange = Database.WEEKLY_MARKETCHANGE.get(ent.getKey());
 
 			System.out.println("MARKET WAS " + marketChange);
 			float[][] dats = ent.getValue();

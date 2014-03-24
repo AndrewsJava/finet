@@ -185,18 +185,20 @@ public class JComponentFactory {
 						.get(redoFileFormat(a.getText())));
 				saveTickerCount(a.getText(), tickers.size());
 				ArrayList<String> actual = new ArrayList<String>();
+				ArrayList<String> bundle = new ArrayList<String>();
 				for (String s : tickers) {
 					int tickerLocation = Database.dbSet.indexOf(s);
 					if (tickerLocation > 0) {
 						actual.add(s);
 						CustomButton tickerButton = JComponentFactory
-								.doIndividualTickerButtonForPanel(s,
+								.doIndividualTickerButtonForPanel(bundle, s,
 										a.getText(), jf, EARNINGS_REPORT);
 						// tickerButton.setBackground(new Color(100,140,255));
 						tickerButton.setMinimumSize(new Dimension(300, 45));
 						stepScroll.addComp((tickerButton));
 					}
 				}
+				doStatInfoForBundleVsMarket(bundle);
 			}
 			// saveUseableTicker(a.getText(), actual);
 
@@ -229,23 +231,25 @@ public class JComponentFactory {
 	}
 
 	private static CustomButton doIndividualTickerButtonForPanel(
-			final String ticker, final String buttonData, final JFrame closeMe,
-			int type) {
+			ArrayList<String> bundle, final String ticker,
+			final String buttonData, final JFrame closeMe, int type) {
 		final CustomButton a = new CustomButton((ticker));
 		a.setPreferredSize(new Dimension(60, 20));
 		final int tickerLocation = Database.dbSet.indexOf(ticker);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
 		addButtonDetails(a, marketCap, tickerLocation, buttonData);
-		if(meetsFilter(ticker)){
-		if (type == EARNINGS_REPORT) {
-			colorButtonByPercentChangeAfterEarningsReport(a, buttonData, a
-					.getText().split(" ")[0]);
-		} else if (type == NON_EARNINGS_REPORT) {
-			colorButtonByOverallChange(a, ticker);
-		}}else{ 
+
+		if (meetsFilter(ticker)) {
+			bundle.add(ticker);
+			if (type == EARNINGS_REPORT) {
+				colorButtonByPercentChangeAfterEarningsReport(a, buttonData, a
+						.getText().split(" ")[0]);
+			} else if (type == NON_EARNINGS_REPORT) {
+				colorButtonByOverallChange(a, ticker);
+			}
+		} else {
 			a.setBackground(Color.DARK_GRAY);
 		}
-
 		a.setHorizontalAlignment(SwingConstants.LEFT);
 		a.addActionListener(new ActionListener() {
 			@Override
@@ -257,9 +261,13 @@ public class JComponentFactory {
 						| JFrame.MAXIMIZED_BOTH);
 				jf.setVisible(true);
 				// closeMe.dispose();
-				if(EarningsTest.singleton.showFFT.isSelected()){
-				FFT fft = new FFT(Database.spawnTimeSeriesForFFT(ticker));
-				fft.showFrequencyGraph();
+				if (EarningsTest.singleton.showFFT.isSelected()) {
+					// FFT fft = new
+					// FFT(Database.spawnTimeSeriesForFFT(ticker));
+					FFT fft = new FFT(Database.spawnAveragesArrayFromPricePair(
+							ticker, EarningsTest.singleton.daysChoice
+									.getSelectedIndex()));
+					fft.showFrequencyGraph();
 				}
 				ProfileCanvas pc = new ProfileCanvas((buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
@@ -273,20 +281,37 @@ public class JComponentFactory {
 		return a;
 	}
 
+	private static void doStatInfoForBundleVsMarket(ArrayList<String> bundle) {
+		float marketChange = Database
+				.calculateMarketChange(0f, Float.MAX_VALUE);
+		ArrayList<Float> relChange = new ArrayList<Float>();
+		int i = 0;
+		for (String ticker : bundle) {
+			relChange.add(Database.calculatePercentChange(
+					Database.dbSet.indexOf(ticker), 0f, Float.MAX_VALUE)
+					- marketChange);
+			i++;
+
+		}
+		new StatInfo(relChange);
+	}
+
 	private static boolean meetsFilter(String ticker) {
 		boolean fits = true;
-		
-	for(FilterPanel fp : EarningsTest.singleton.filters){
-		if(!fp.include.isSelected())continue;
-		int id = fp.getId();
-		float low = fp.getLow();
-		float high = fp.getHigh();
-		float currentDataPoint = Database.DB_ARRAY.lastEntry().getValue()[Database.dbSet.indexOf(ticker)][id];
-		
-		if(currentDataPoint<low || currentDataPoint>high	)
-			return false;
-		
-	}
+
+		for (FilterPanel fp : EarningsTest.singleton.filters) {
+			if (!fp.include.isSelected())
+				continue;
+			int id = fp.getId();
+			float low = fp.getLow();
+			float high = fp.getHigh();
+			float currentDataPoint = Database.DB_ARRAY.lastEntry().getValue()[Database.dbSet
+					.indexOf(ticker)][id];
+
+			if (currentDataPoint < low || currentDataPoint > high)
+				return false;
+
+		}
 		return fits;
 	}
 
@@ -390,8 +415,8 @@ public class JComponentFactory {
 					afterReport);
 			float change = Database.calculatePercentChange(
 					Database.dbSet.indexOf(ticker), beforeReport, afterReport);
-			System.out.println("market calc: " + marketFactor);
-			System.out.println("change calc: " + change);
+			// System.out.println("market calc: " + marketFactor);
+			// System.out.println("change calc: " + change);
 			change = change - marketFactor;
 			int red = (int) (120 + change * 1);
 			int green = (int) (140 + change * 1);
@@ -423,8 +448,8 @@ public class JComponentFactory {
 			return;
 		float marketChange = Database.calculateMarketChange(0, Float.MAX_VALUE);
 
-		System.out.println("ticker calc: (" + ticker + ")" + overallChange);
-		System.out.println("market calc: " + marketChange);
+		// System.out.println("ticker calc: (" + ticker + ")" + overallChange);
+		// System.out.println("market calc: " + marketChange);
 		float diff = overallChange - marketChange;
 		int red = (int) (120 + diff * 1);
 		int green = (int) (140 + diff * 3);
@@ -724,7 +749,7 @@ public class JComponentFactory {
 	public static CustomButton doDescriptionSearchButton(
 			final JTextArea searchWords) {
 		final CustomButton a = new CustomButton("search");
-		final ArrayList<String> tickers = new ArrayList<String>();
+		//final ArrayList<String> tickers = new ArrayList<String>();
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -738,6 +763,7 @@ public class JComponentFactory {
 				searchResultFrame.add(tickerScroll);
 				String reformated = format(searchWords.getText().toLowerCase());
 				String[] searchParams = reformated.split(" ");
+				ArrayList<String> bundle = new ArrayList<String>();
 				for (Entry<String, String> ent : Database.DESCRIPTIONS
 						.entrySet()) {
 					String ticker = ent.getKey();
@@ -746,8 +772,9 @@ public class JComponentFactory {
 					for (String searcher : searchParams) {
 						if (description.contains(searcher)) {
 							CustomButton tickerButton = JComponentFactory
-									.doIndividualTickerButtonForPanel(ticker,
-											a.getText(), searchResultFrame,
+									.doIndividualTickerButtonForPanel(bundle,
+											ticker, a.getText(),
+											searchResultFrame,
 											NON_EARNINGS_REPORT);
 							// tickerButton.setBackground(new
 							// Color(100,140,255));
@@ -756,6 +783,7 @@ public class JComponentFactory {
 						}
 					}
 				}
+				doStatInfoForBundleVsMarket(bundle);
 
 			}
 

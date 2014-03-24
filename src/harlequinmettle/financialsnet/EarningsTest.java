@@ -119,8 +119,8 @@ public class EarningsTest {
 		application.add(gui);
 		setUpTabs();
 		for (Entry<String, ArrayList<String>> x : EarningsTest.singleton.programSettings.tickersActual
-				.entrySet())
-			System.out.println(x);
+				.entrySet());//HACK
+		//	System.out.println(x);
 	}
 
 	private void setUpTabs() {
@@ -359,8 +359,8 @@ public class EarningsTest {
 				String fromFile = FileUtils.readFileToString(htmlText);
 				getTickersFrom = fromFile.replaceAll("\\s+", "")
 						.split("q\\?s=");
-				System.out.println("\n" + htmlText.getName() + "      --->"
-						+ getTickersFrom.length + "     :>");
+//				System.out.println("\n" + htmlText.getName() + "      --->"
+//						+ getTickersFrom.length + "     :>");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -370,9 +370,9 @@ public class EarningsTest {
 				String s = getTickersFrom[i];
 				try {
 					if (s.indexOf(">") > 0 && s.indexOf("<") > 0) {
-						System.out.print(s.substring(s.indexOf(">") + 1,
-								s.indexOf("<"))
-								+ "    ");
+//						System.out.print(s.substring(s.indexOf(">") + 1,
+//								s.indexOf("<"))
+//								+ "    ");
 					}
 				} catch (Exception e) {
 					// System.err.println("error: "+s);

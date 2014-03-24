@@ -33,7 +33,7 @@ public class Database implements Qi, Yi, DBLabels {
 
 	public static final TreeMap<Float, float[][][]> DB_PRICES = new TreeMap<Float, float[][][]>();
 
-	public static final TreeMap<Float, Float> MARKETCHANGE = new TreeMap<Float, Float>();
+	public static final TreeMap<Float, Float> WEEKLY_MARKETCHANGE = new TreeMap<Float, Float>();
 	public static final TreeMap<Float, Float> MARKET = new TreeMap<Float, Float>();
 
 	public static final TreeMap<Float, float[]> PRICES = new TreeMap<Float, float[]>();
@@ -73,6 +73,7 @@ public class Database implements Qi, Yi, DBLabels {
 	public static float overallMarketChange;
 	public static final TreeMap<String, Float> INDIVIDUAL_OVERALL_CHANGES = new TreeMap<String, Float>();
 	public static StatInfo changesStats;
+
 	// PARSEING:
 	// LOADING:
 
@@ -87,9 +88,9 @@ public class Database implements Qi, Yi, DBLabels {
 		calculateChanges();
 		computeSuplementalFactors();
 		fillTechnicals();
-		mapChangesAndTheirStats(); 
-		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
-			SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
+		mapChangesAndTheirStats();
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
+		for (Entry<Float, Float> ent : WEEKLY_MARKETCHANGE.entrySet()) {
 			String formated = sdf.format(new Date(
 					(long) (ent.getKey() * 24 * 3600 * 1000)));
 			System.out.println("week    : " + formated + "   --d> "
@@ -113,37 +114,45 @@ public class Database implements Qi, Yi, DBLabels {
 	}
 
 	private void mapChangesAndTheirStats() {
-		overallMarketChange = (int)(100*(
-				(Database.SUM_MARKET_PRICE_DATA.lastEntry().getValue()[6])-Database.SUM_MARKET_PRICE_DATA.ceilingEntry( 15800f).getValue()[6])
-				/(Database.SUM_MARKET_PRICE_DATA.ceilingEntry( 15800f).getValue()[6]));
-		
-		for(Entry<String, TreeMap<Float, float[]>> ent: TECHNICAL_PRICE_DATA.entrySet() ){
+		overallMarketChange = (int) (100 * ((Database.SUM_MARKET_PRICE_DATA
+				.lastEntry().getValue()[6]) - Database.SUM_MARKET_PRICE_DATA
+				.ceilingEntry(15800f).getValue()[6]) / (Database.SUM_MARKET_PRICE_DATA
+				.ceilingEntry(15800f).getValue()[6]));
+
+		for (Entry<String, TreeMap<Float, float[]>> ent : TECHNICAL_PRICE_DATA
+				.entrySet()) {
 			TreeMap<Float, float[]> technicals = ent.getValue();
-			int individualOverallChange  = (int)(100*((technicals.lastEntry().getValue()[6] - technicals.firstEntry().getValue()[6])/(technicals.firstEntry().getValue()[6])
-					));
-			INDIVIDUAL_OVERALL_CHANGES.put(ent.getKey(), (float)individualOverallChange);
+			int individualOverallChange = (int) (100 * ((technicals.lastEntry()
+					.getValue()[6] - technicals.firstEntry().getValue()[6]) / (technicals
+					.firstEntry().getValue()[6])));
+			INDIVIDUAL_OVERALL_CHANGES.put(ent.getKey(),
+					(float) individualOverallChange);
 		}
-		changesStats = new StatInfo( new ArrayList<Float>(INDIVIDUAL_OVERALL_CHANGES.values()));
+		changesStats = new StatInfo(new ArrayList<Float>(
+				INDIVIDUAL_OVERALL_CHANGES.values()));
 	}
 
-public static float calculatePercentChange(int tickerId, float start, float end) {
-		return (int)(100*(
-				(Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).floorEntry(end).getValue()[6])-Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).ceilingEntry(start).getValue()[6])
-				/(Database.TECHNICAL_PRICE_DATA.get(dbSet.get(tickerId)).ceilingEntry( start).getValue()[6]));
- 	}
-
-public static float calculateMarketChange(float start, float end) {
-	int change = Integer.MAX_VALUE;
-	int tries = 0;
-	while(change > 10000 && tries++<4){
-	change = (int)(100*(
-			(Database.SUM_MARKET_PRICE_DATA.floorEntry(end).getValue()[6])-Database.SUM_MARKET_PRICE_DATA.ceilingEntry(start).getValue()[6])
-			/(Database.SUM_MARKET_PRICE_DATA.ceilingEntry( start).getValue()[6]));
-	start--;
-	end++;
+	public static float calculatePercentChange(int tickerId, float start,
+			float end) {
+		return (int) (100 * ((Database.TECHNICAL_PRICE_DATA
+				.get(dbSet.get(tickerId)).floorEntry(end).getValue()[6]) - Database.TECHNICAL_PRICE_DATA
+				.get(dbSet.get(tickerId)).ceilingEntry(start).getValue()[6]) / (Database.TECHNICAL_PRICE_DATA
+				.get(dbSet.get(tickerId)).ceilingEntry(start).getValue()[6]));
 	}
-	return change;
-}
+
+	public static float calculateMarketChange(float start, float end) {
+		int change = Integer.MAX_VALUE;
+		int tries = 0;
+		while (change > 10000 && tries++ < 4) {
+			change = (int) (100 * ((Database.SUM_MARKET_PRICE_DATA.floorEntry(
+					end).getValue()[6]) - Database.SUM_MARKET_PRICE_DATA
+					.ceilingEntry(start).getValue()[6]) / (Database.SUM_MARKET_PRICE_DATA
+					.ceilingEntry(start).getValue()[6]));
+			start--;
+			end++;
+		}
+		return change;
+	}
 
 	private void fillTechnicals() {
 		int better = 0;
@@ -169,16 +178,38 @@ public static float calculateMarketChange(float start, float end) {
 		System.out.println("\nbetter: " + better);
 		System.out.println("\nworse: " + worse);
 	}
-static double[] spawnTimeSeriesForFFT(String ticker){
-	TreeMap<Float, float[]> allTickerHistoricData = TECHNICAL_PRICE_DATA.get(ticker);
-	double[] priceData = new double[allTickerHistoricData.size()];
-	int i = 0;
-	for(float[] data: allTickerHistoricData.values()){
-		priceData[i++] = data[6]; 
+
+	static double[] spawnTimeSeriesForFFT(String ticker) {
+		TreeMap<Float, float[]> allTickerHistoricData = TECHNICAL_PRICE_DATA
+				.get(ticker);
+		double[] priceData = new double[allTickerHistoricData.size()];
+		int i = 0;
+		for (float[] data : allTickerHistoricData.values()) {
+			priceData[i++] = data[6];
+		}
+		return priceData;
 	}
-	return priceData;
-}
+
 	// ///////////
+	static double[] spawnAveragesArrayFromPricePair(String ticker,
+			int neighborsToCount) {
+		double[] priceData = spawnTimeSeriesForFFT(ticker);
+		double[] avgPriceData = new double[priceData.length];
+
+		for (int J = neighborsToCount; J < (priceData.length - neighborsToCount); J++) {
+			float sum = 0;
+			int n = 0;
+			for (int L = J - neighborsToCount; L <= J + 1 + 2
+					* neighborsToCount
+					&& L < priceData.length; L++) {
+				n++;
+				sum += priceData[L];
+			}
+			float average = sum / n;
+			avgPriceData[(J)] = average;
+		}
+		return avgPriceData;
+	}
 
 	private boolean isDataBetter(float[][][] tech, int id, int i) {
 
@@ -280,8 +311,8 @@ static double[] spawnTimeSeriesForFFT(String ticker){
 		calculateChanges();
 		computeSuplementalFactors();
 		fillTechnicals();
-		mapChangesAndTheirStats(); 
-		for (Entry<Float, Float> ent : MARKETCHANGE.entrySet()) {
+		mapChangesAndTheirStats();
+		for (Entry<Float, Float> ent : WEEKLY_MARKETCHANGE.entrySet()) {
 			SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, ''yy");
 			String formated = sdf.format(new Date(
 					(long) (ent.getKey() * 24 * 3600 * 1000)));
@@ -389,7 +420,7 @@ static double[] spawnTimeSeriesForFFT(String ticker){
 		}
 
 		// System.out.println("changes: 	" + Arrays.toString(changes));
-		MARKETCHANGE.put(startDate, averageMarketChange(changes));
+		WEEKLY_MARKETCHANGE.put(startDate, averageMarketChange(changes));
 		UNFORESEEN.put(startDate, changes);
 	}
 
