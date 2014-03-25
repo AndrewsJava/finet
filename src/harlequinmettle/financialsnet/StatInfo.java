@@ -1,5 +1,4 @@
 package harlequinmettle.financialsnet;
- 
 
 import harlequinmettle.financialsnet.interfaces.DBLabels;
 
@@ -16,6 +15,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
@@ -87,8 +87,8 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 	ArrayList<Rectangle2D.Float> overBars = new ArrayList<Rectangle2D.Float>();
 	ArrayList<Rectangle2D.Float> underBars = new ArrayList<Rectangle2D.Float>();
 
-	Rectangle2D.Float shadedArea1  ;
-	Rectangle2D.Float shadedArea2  ;
+	Rectangle2D.Float shadedArea1;
+	Rectangle2D.Float shadedArea2;
 
 	public boolean varsSet = false;
 	public boolean usingMax = true;
@@ -126,6 +126,8 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 	public StatInfo marketBeat;
 	boolean setXlim = false;
 	boolean setNlim = false;
+
+	boolean showLines = false;
 
 	/*
 	 * (non-Javadoc)
@@ -171,6 +173,10 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 		varsSet = true;
 		setVisible(true);
 		this.repaint();
+	}
+
+	public void setShowLines(boolean showLines) {
+		this.showLines = showLines;
 	}
 
 	public StatInfo(ArrayList<Float> stats, int id) {
@@ -246,13 +252,14 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 	}
 
 	public void showIt() {
-		subsetStats =  generateBundleStatistics(ID, emin, emax);
-		 setMarketComparisonStatistics(this, ID, emin, emax);
+		subsetStats = generateBundleStatistics(ID, emin, emax);
+		setMarketComparisonStatistics(this, ID, emin, emax);
 
 		setUpComparisonBars();
 		setVisible(true);
 		this.repaint();
 	}
+
 	public static void setMarketComparisonStatistics(StatInfo setTo, int iD,
 			float emin, float emax) {
 
@@ -339,8 +346,8 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 
 		frameW = this.getWidth();
 		frameH = this.getHeight();
-		 shadedArea1 = new Rectangle2D.Float(0, 0,0, frameH);
-		 shadedArea2 = new Rectangle2D.Float(0, 0, 0, frameH);
+		shadedArea1 = new Rectangle2D.Float(0, 0, 0, frameH);
+		shadedArea2 = new Rectangle2D.Float(0, 0, 0, frameH);
 		barwidth = (frameW - 2 * SIDE_BUFFER - BAR_BUFFER * nbars) / nbars;
 		setMarketPathToScale();
 		recalculatePercentagesScale();
@@ -387,10 +394,12 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 		emax = bd.floatValue();
 
 	}
-public int locationInHistogram(float f){
-	return (int) ((f - (emin)) / (interval));
-	
-}
+
+	public int locationInHistogram(float f) {
+		return (int) ((f - (emin)) / (interval));
+
+	}
+
 	public void calculateHistogramEffective(ArrayList<Float> _data) {
 		// ///////////////////////////////////
 
@@ -424,7 +433,7 @@ public int locationInHistogram(float f){
 		}
 		this.histogram = histogram;
 	}
- 
+
 	public int[] calculateHistogramEffective(ArrayList<Float> _data,
 			float overrideMin, float overrideMax) {
 		// ///////////////////////////////////
@@ -669,7 +678,7 @@ public int locationInHistogram(float f){
 	}
 
 	public static float findMinimum(Collection<Float> values) {
-		float MIN =Float.POSITIVE_INFINITY;
+		float MIN = Float.POSITIVE_INFINITY;
 
 		for (float f : values)
 			if (f < MIN)
@@ -679,7 +688,7 @@ public int locationInHistogram(float f){
 	}
 
 	public static float findMaximum(Collection<Float> values) {
-		float MAX =  Float.NEGATIVE_INFINITY;
+		float MAX = Float.NEGATIVE_INFINITY;
 		for (float f : values)
 			if (f > MAX)
 				MAX = f;
@@ -715,12 +724,12 @@ public int locationInHistogram(float f){
 
 		}
 		g.setColor(bcSub);
-		if(subsetStats != null && subsetStats.histoBars != null)
-		for (Rectangle2D.Float f : subsetStats.histoBars) {
-			if(f != null)
-			g.fill(f);
+		if (subsetStats != null && subsetStats.histoBars != null)
+			for (Rectangle2D.Float f : subsetStats.histoBars) {
+				if (f != null)
+					g.fill(f);
 
-		}
+			}
 
 		g.setStroke(thicker);
 		g.setColor(Color.green);
@@ -744,12 +753,12 @@ public int locationInHistogram(float f){
 			g.draw(gp);
 		}
 		g.setColor(shade);
-//		if (DataControlls.INVERT[ID].isSelected()) {
-//			g.fill(shadedArea1); 
-//			g.fill(shadedArea2); 
-//		} else {
-//			g.fill(shadedArea1);
-//		}
+		// if (DataControlls.INVERT[ID].isSelected()) {
+		// g.fill(shadedArea1);
+		// g.fill(shadedArea2);
+		// } else {
+		// g.fill(shadedArea1);
+		// }
 		// upper and lower limit adjustors
 		g.setColor(limLine);
 		g.drawLine((int) nLim, 0, (int) nLim, (int) frameH);
@@ -757,14 +766,44 @@ public int locationInHistogram(float f){
 
 		// add numbers to histogram
 		addNumbersToHistogram(g);
+		if(showLines){
+			drawRelativeLines(g);
+		}
 
+	}
+
+	private void drawRelativeLines(Graphics2D g) {
+
+//		float xZero = getPixel(0);
+//		float xMedian = getPixel(median);
+//		float xMean = getPixel(mean);
+//		Line2D.Float zero = new Line2D.Float(xZero,0,xZero,frameH);
+//		Line2D.Float _median = new Line2D.Float(xMedian,0,xMedian,frameH);
+//		Line2D.Float _mean = new Line2D.Float(xMean,0,xMean,frameH);
+		
+		Rectangle2D.Float zero = histoBars[locationInHistogram(0)];
+		Rectangle2D.Float _median = histoBars[locationInHistogram(median)];
+		Rectangle2D.Float _mean =  histoBars[locationInHistogram(mean)];
+		
+		g.setColor(Color.white);
+		g.draw(zero);
+		g.setColor(Color.orange);
+		g.drawString("median:  "+median, 100, 200);
+		g.draw(_median);
+		g.setColor(Color.red);
+		g.drawString("mean:  "+mean, 100, 250);
+		g.draw(_mean);
+	}
+
+	private float getPixel(float pt) { 
+		return  ((pt-emin)*(frameW-2*SIDE_BUFFER)/emax);
 	}
 
 	private void addNumbersToHistogram(Graphics2D g) {
 		g.setColor(Color.black);
 		g.draw(zeroPercent);
-//		g.drawString(" " + gmin, nLim, gminVert);
-//		g.drawString(" " + gmax, xLim, gmaxVert);
+		// g.drawString(" " + gmin, nLim, gminVert);
+		// g.drawString(" " + gmax, xLim, gmaxVert);
 		g.drawString(" " + emin, 15, frameH - 30);
 		g.drawString(" " + emax, frameW - 100, frameH - 30);
 		if (false)
@@ -854,38 +893,39 @@ public int locationInHistogram(float f){
 
 	@Override
 	public void mouseReleased(MouseEvent arg0) {
-//		final float x = arg0.getX();
-//
-//		if ((x < xLim + drag_proximity && x > xLim - drag_proximity) || setXlim) {
-//			xLim = x;
-//			gmaxVert = arg0.getY();
-//			gmax = determineLimit(x);
-//			DataControlls.HIGHS[ID].setText("" + gmax);
-//			updateShadedArea();
-//		} else if ((x < nLim + drag_proximity && x > nLim - drag_proximity)
-//				|| setNlim) {
-//			nLim = x;
-//			gminVert = arg0.getY();
-//			gmin = determineLimit(x);
-//			DataControlls.LOWS[ID].setText("" + gmin);
-//			updateShadedArea();
-//		}
-//		subsetStats = DataControlls.generateBundleStatistics(ID, emin, emax);
-//		DataControlls.applyLimtsToDatabase();
-//		repaint();
+		// final float x = arg0.getX();
+		//
+		// if ((x < xLim + drag_proximity && x > xLim - drag_proximity) ||
+		// setXlim) {
+		// xLim = x;
+		// gmaxVert = arg0.getY();
+		// gmax = determineLimit(x);
+		// DataControlls.HIGHS[ID].setText("" + gmax);
+		// updateShadedArea();
+		// } else if ((x < nLim + drag_proximity && x > nLim - drag_proximity)
+		// || setNlim) {
+		// nLim = x;
+		// gminVert = arg0.getY();
+		// gmin = determineLimit(x);
+		// DataControlls.LOWS[ID].setText("" + gmin);
+		// updateShadedArea();
+		// }
+		// subsetStats = DataControlls.generateBundleStatistics(ID, emin, emax);
+		// DataControlls.applyLimtsToDatabase();
+		// repaint();
 	}
 
 	private void updateShadedArea() {
-//		if (DataControlls.INVERT[ID].isSelected()) {
-//			// add central rect
-//			shadedArea1.width = nLim;
-//			shadedArea2.x = xLim;
-//			shadedArea2.width = 5555;
-//		} else {
-//			shadedArea1.x = nLim;
-//			shadedArea1.width = xLim - nLim;
-//
-//		}
+		// if (DataControlls.INVERT[ID].isSelected()) {
+		// // add central rect
+		// shadedArea1.width = nLim;
+		// shadedArea2.x = xLim;
+		// shadedArea2.width = 5555;
+		// } else {
+		// shadedArea1.x = nLim;
+		// shadedArea1.width = xLim - nLim;
+		//
+		// }
 	}
 
 	// /////////////////////////////////////

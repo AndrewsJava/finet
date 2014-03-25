@@ -233,13 +233,17 @@ public class JComponentFactory {
 	private static CustomButton doIndividualTickerButtonForPanel(
 			ArrayList<String> bundle, final String ticker,
 			final String buttonData, final JFrame closeMe, int type) {
+		
+		boolean filterResults = meetsFilter(ticker);
+		
+		if(!filterResults)return null;
 		final CustomButton a = new CustomButton((ticker));
 		a.setPreferredSize(new Dimension(60, 20));
 		final int tickerLocation = Database.dbSet.indexOf(ticker);
 		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
 		addButtonDetails(a, marketCap, tickerLocation, buttonData);
 
-		if (meetsFilter(ticker)) {
+		if (filterResults) {
 			bundle.add(ticker);
 			if (type == EARNINGS_REPORT) {
 				colorButtonByPercentChangeAfterEarningsReport(a, buttonData, a
@@ -293,7 +297,8 @@ public class JComponentFactory {
 			i++;
 
 		}
-		new StatInfo(relChange);
+		StatInfo relCh = new StatInfo(relChange);
+		relCh.setShowLines(true);
 	}
 
 	private static boolean meetsFilter(String ticker) {
@@ -749,7 +754,7 @@ public class JComponentFactory {
 	public static CustomButton doDescriptionSearchButton(
 			final JTextArea searchWords) {
 		final CustomButton a = new CustomButton("search");
-		//final ArrayList<String> tickers = new ArrayList<String>();
+		// final ArrayList<String> tickers = new ArrayList<String>();
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -778,8 +783,10 @@ public class JComponentFactory {
 											NON_EARNINGS_REPORT);
 							// tickerButton.setBackground(new
 							// Color(100,140,255));
+							if(tickerButton!=null){
 							tickerButton.setMinimumSize(new Dimension(300, 45));
 							tickerScroll.addComp((tickerButton));
+							}
 						}
 					}
 				}
