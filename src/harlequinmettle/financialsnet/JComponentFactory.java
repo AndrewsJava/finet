@@ -1,5 +1,6 @@
 package harlequinmettle.financialsnet;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -19,6 +20,7 @@ import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -26,7 +28,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
@@ -205,38 +206,14 @@ public class JComponentFactory {
 		});
 	}
 
-	private static CustomButton doIndividualTickerButton(final String s,
-			final String buttonData) {
-		final CustomButton a = new CustomButton(s);
-		a.setPreferredSize(new Dimension(60, 20));
-		final int tickerLocation = Database.dbSet.indexOf(s);
-		double marketCap = Database.DB_ARRAY.lastEntry().getValue()[tickerLocation][38];
-		addButtonDetails(a, marketCap, tickerLocation, buttonData);
-		a.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				final JFrame jf = new JFrame(a.getText());
-				jf.setSize(1300, 650);
-				jf.setVisible(true);
-				ProfileCanvas pc = new ProfileCanvas(reformatTitle(buttonData),
-						tickerLocation, jf.getWidth(), jf.getHeight());
-
-				jf.addComponentListener(JComponentFactory
-						.doWindowRescaleListener(pc));
-				jf.add(JComponentFactory.makeJScrollPane(pc));
-			}
-
-		});
-		return a;
-	}
-
 	private static CustomButton doIndividualTickerButtonForPanel(
 			ArrayList<String> bundle, final String ticker,
 			final String buttonData, final JFrame closeMe, int type) {
-		
+
 		boolean filterResults = meetsFilter(ticker);
-		
-		if(!filterResults)return null;
+
+		if (!filterResults)
+			return null;
 		final CustomButton a = new CustomButton((ticker));
 		a.setPreferredSize(new Dimension(60, 20));
 		final int tickerLocation = Database.dbSet.indexOf(ticker);
@@ -258,7 +235,9 @@ public class JComponentFactory {
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-
+				//negative time for most recent listed first
+EarningsTest.programSettings.myHistory.put(-System.currentTimeMillis(), ticker); 
+MemoryManager.saveSettings();
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setExtendedState(jf.getExtendedState()
@@ -275,10 +254,49 @@ public class JComponentFactory {
 				}
 				ProfileCanvas pc = new ProfileCanvas((buttonData),
 						tickerLocation, jf.getWidth(), jf.getHeight());
-
+				// /////////////
+				addTickerMangerPanel(jf, ticker, tickerLocation);
+				// ////////////
 				jf.addComponentListener(JComponentFactory
 						.doWindowRescaleListener(pc));
 				jf.add(JComponentFactory.makeJScrollPane(pc));
+			}
+
+			private void addTickerMangerPanel(JFrame jf, String ticker,
+					int tickerLocation) {
+
+				String[] tradeOptions = { "buy", "sell" };
+				JComboBox<String> buySell = new JComboBox<String>(tradeOptions);
+				Integer[] rateOptions = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+				JComboBox<Integer> myRating = new JComboBox<Integer>(
+						rateOptions);
+
+				CustomButton saveTicker = new CustomButton("trade this stock");
+				addSaveTickerListener(saveTicker, ticker, buySell, myRating);
+				JPanel topPanel = JComponentFactory
+						.makePanel(JComponentFactory.HORIZONTAL);
+				topPanel.add(saveTicker);
+				topPanel.add(myRating);
+				topPanel.add(buySell);
+
+				jf.add(topPanel, BorderLayout.NORTH);
+			}
+
+			private void addSaveTickerListener(CustomButton saveTicker,
+					final String ticker, final JComboBox<String> tradeOpns,
+					final JComboBox<Integer> rating) {
+				saveTicker.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						EarningsTest.singleton.programSettings.myTrades.put(
+								System.currentTimeMillis(),
+								new Trade((String) tradeOpns.getSelectedItem(),
+										ticker, ((Integer) rating
+												.getSelectedItem()).intValue()));
+					}
+
+				});
 			}
 
 		});
@@ -475,69 +493,6 @@ public class JComponentFactory {
 		String bText = a.getText();
 		bText += " v Mkt: " + diff;
 		a.setText(bText);
-	}
-
-	private static void addTabBuildingListener(final CustomButton a) {
-
-		a.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (!Database.loaded)
-					return;
-				final JFrame jf = new JFrame(a.getText());
-				jf.setSize(1300, 650);
-				final ArrayList<ProfileCanvas> theCanvasesToRescale = new ArrayList<ProfileCanvas>();
-				jf.addComponentListener(JComponentFactory
-						.doWindowRescaleListener(theCanvasesToRescale));
-				jf.setVisible(true);
-				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				JTabbedPane compareTickers = new JTabbedPane();
-				jf.add(compareTickers);
-				ArrayList<String> tickers = parseFileForTickers(EarningsTest.MAP_TO_FILES
-						.get(redoFileFormat(a.getText())));
-				saveTickerCount(a.getText(), tickers.size());
-				ArrayList<String> actual = new ArrayList<String>();
-				for (String s : tickers) {
-					int tickerLocation = Database.dbSet.indexOf(s);
-					if (tickerLocation > 0) {
-						actual.add(s);
-						ProfileCanvas pc = new ProfileCanvas(a.getText(),
-								tickerLocation, jf.getWidth(), jf.getHeight());
-						// ProfileCanvas pc = new ProfileCanvas(
-						// tickerLocation);
-						theCanvasesToRescale.add(pc);
-						compareTickers.add(s,
-								JComponentFactory.makeJScrollPane(pc));
-					}
-				}
-				saveUseableTicker(a.getText(), actual);
-				renameButton(a);
-			}
-
-			private void saveUseableTicker(String buttonTitle,
-					ArrayList<String> tickers) {
-				EarningsTest.singleton.programSettings.tickersPerFileInDatabase
-						.put(buttonTitle, tickers.size());
-				EarningsTest.singleton.programSettings.tickersActual.put(
-						buttonTitle, tickers);
-				isSaveMax(tickers.size());
-				MemoryManager.saveSettings();
-			}
-
-			private void isSaveMax(int size) {
-				if (size > EarningsTest.singleton.programSettings.maxSize)
-					EarningsTest.singleton.programSettings.maxSize = size;
-			}
-
-			private void saveTickerCount(String buttonTitle, int size) {
-				EarningsTest.singleton.programSettings.tickersPerFile.put(
-						buttonTitle, size);
-
-				MemoryManager.saveSettings();
-			}
-		}
-
-		);
 	}
 
 	private void isSaveMax(int size) {
@@ -783,9 +738,10 @@ public class JComponentFactory {
 											NON_EARNINGS_REPORT);
 							// tickerButton.setBackground(new
 							// Color(100,140,255));
-							if(tickerButton!=null){
-							tickerButton.setMinimumSize(new Dimension(300, 45));
-							tickerScroll.addComp((tickerButton));
+							if (tickerButton != null) {
+								tickerButton.setMinimumSize(new Dimension(300,
+										45));
+								tickerScroll.addComp((tickerButton));
 							}
 						}
 					}
@@ -943,6 +899,7 @@ public class JComponentFactory {
 						.makeTextScroll(wordStat);
 				jf.add(compareTickers);
 
+				showFullSetWithDescriptions();
 				TreeMap<Integer, ArrayList<String>> orderResults = new TreeMap<Integer, ArrayList<String>>();
 
 				for (Entry<String, Integer> ent : Database.WORD_STATS
@@ -974,6 +931,22 @@ public class JComponentFactory {
 				StatInfo avgsStats = new StatInfo(avgs);
 			}
 
+			private void showFullSetWithDescriptions() {
+				JFrame jf = new JFrame(buttonTitle);
+				jf.setSize(900, 500);
+				jf.setVisible(true);
+				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				JTextArea descriptions = new JTextArea();
+				JScrollPane compareTickers = JComponentFactory
+						.makeTextScroll(descriptions);
+				jf.add(compareTickers);
+
+				for (String ticker : Database.dbSet) {
+					descriptions.append("\n" + ticker + "               "
+							+ Database.DESCRIPTIONS.get(ticker));
+				}
+			}
+
 			private float calculateWordRankTotal(String text) {
 				float rank = 0;
 				String[] words = Database.simplifyText(text).split(" ");
@@ -997,6 +970,80 @@ public class JComponentFactory {
 
 		);
 
+		return a;
+	}
+
+	public static CustomButton doPorfolioViewButton() {
+
+		final CustomButton a = new CustomButton("show my portfolio");
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				JFrame searchResultFrame = new JFrame("my portfolio");
+				searchResultFrame.setSize(1300, 650);
+				searchResultFrame.setVisible(true);
+				searchResultFrame
+						.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				JScrollPanelledPane tickerScroll = new JScrollPanelledPane();
+				searchResultFrame.add(tickerScroll);
+
+				ArrayList<String> bundle = new ArrayList<String>();
+				 for(String ticker :EarningsTest.programSettings.myPortfolio.keySet()){
+				 
+				 
+					CustomButton tickerButton = JComponentFactory
+							.doIndividualTickerButtonForPanel(bundle, ticker,
+									a.getText(), searchResultFrame,
+									NON_EARNINGS_REPORT);
+					// tickerButton.setBackground(new
+					// Color(100,140,255));
+					if (tickerButton != null) {
+						tickerButton.setMinimumSize(new Dimension(300, 45));
+						tickerScroll.addComp((tickerButton));
+					}
+				}
+				doStatInfoForBundleVsMarket(new ArrayList<String>(EarningsTest.programSettings.myPortfolio.keySet()));
+
+			}
+
+		});
+		return a;
+	}
+
+	public static CustomButton doHistoryViewButton() {
+
+		final CustomButton a = new CustomButton("show my history");
+		a.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				JFrame searchResultFrame = new JFrame("my history");
+				searchResultFrame.setSize(1300, 650);
+				searchResultFrame.setVisible(true);
+				searchResultFrame
+						.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				JScrollPanelledPane tickerScroll = new JScrollPanelledPane();
+				searchResultFrame.add(tickerScroll);
+
+				ArrayList<String> bundle = new ArrayList<String>();
+				 for(String ticker :EarningsTest.programSettings.myHistory.values()){
+				 
+				 
+					CustomButton tickerButton = JComponentFactory
+							.doIndividualTickerButtonForPanel(bundle, ticker,
+									a.getText(), searchResultFrame,
+									NON_EARNINGS_REPORT);
+					// tickerButton.setBackground(new
+					// Color(100,140,255));
+					if (tickerButton != null) {
+						tickerButton.setMinimumSize(new Dimension(300, 45));
+						tickerScroll.addComp((tickerButton));
+					}
+				}
+				doStatInfoForBundleVsMarket(new ArrayList<String>(EarningsTest.programSettings.myPortfolio.keySet()));
+
+			}
+
+		});
 		return a;
 	}
 

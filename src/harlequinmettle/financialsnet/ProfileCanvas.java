@@ -2,6 +2,7 @@ package harlequinmettle.financialsnet;
 
 import harlequinmettle.financialsnet.interfaces.DBLabels;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -65,6 +66,8 @@ public class ProfileCanvas extends JPanel {
 		}
 	};
 
+	
+	
 //	ProfileCanvas pc = new ProfileCanvas(reformatTitle(buttonData),
 //			tickerLocation, jf.getWidth(), jf.getHeight());
 

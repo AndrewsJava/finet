@@ -28,11 +28,7 @@ import javax.swing.JTextArea;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.NameFileComparator;
 
-public class EarningsTest {
-	// TODO: distribution of word rank
-	// TODO: save number of tickers/file
-	// TODO: organize access to buttons/colorize
-	// TODO: limit dates/extend dates to expected report date
+public class EarningsTest { 
 	static ProgramSettings programSettings;
 	static Database db;
 	final String qTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download";
@@ -119,7 +115,7 @@ public class EarningsTest {
 		application.add(gui);
 		setUpTabs();
 		for (Entry<String, ArrayList<String>> x : EarningsTest.singleton.programSettings.tickersActual
-				.entrySet());//HACK
+				.entrySet()){}
 		//	System.out.println(x);
 	}
 
@@ -142,7 +138,17 @@ public class EarningsTest {
 		addTextStatLauncherPanel(stepScroll);
 		addSearchProfilePanel(stepScroll);
 		addFilterPanel(stepScroll);
+		addPorfolioPanel(stepScroll);
 		return stepScroll;
+	}
+
+	private void addPorfolioPanel(JScrollPanelledPane stepScroll) {
+	JPanel porfolioHistoryPanel = JComponentFactory.makePanel(JComponentFactory.HORIZONTAL);
+		CustomButton myPorfolio = JComponentFactory.doPorfolioViewButton();
+		CustomButton myHistory = JComponentFactory.doHistoryViewButton();
+		porfolioHistoryPanel.add(myPorfolio);
+		porfolioHistoryPanel.add(myHistory);
+		stepScroll.addComp(porfolioHistoryPanel);
 	}
 
 	private void addFilterPanel(JScrollPanelledPane stepScroll) {
