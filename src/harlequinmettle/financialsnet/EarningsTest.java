@@ -74,7 +74,7 @@ public class EarningsTest {
 	static final TreeMap<String, File> MAP_TO_FILES = new TreeMap<String, File>();
 
 	final JLabel wordSearch = JComponentFactory
-			.doJLabel("words to search for (space separated) (\"statistics\"== all)");
+			.doJLabel("words to search for (space separated) ");
 	static final JTextArea wordsForSearch = JComponentFactory.doJTextArea();
 
 	final CustomButton submitSearchButton = JComponentFactory
@@ -159,8 +159,7 @@ public class EarningsTest {
 	private void addSearchProfilePanel(JScrollPanelledPane stepScroll) {
 		JPanel textSearch = JComponentFactory
 				.makePanel(JComponentFactory.HORIZONTAL);
-
-		wordsForSearch.setText("statistics");
+ 
 		textSearch.add(wordSearch);
 		textSearch.add(wordsForSearch);
 		textSearch.add(submitSearchButton);

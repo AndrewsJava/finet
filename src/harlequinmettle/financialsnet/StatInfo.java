@@ -780,7 +780,7 @@ public class StatInfo extends JFrame implements WindowListener, MouseListener,
 //		Line2D.Float zero = new Line2D.Float(xZero,0,xZero,frameH);
 //		Line2D.Float _median = new Line2D.Float(xMedian,0,xMedian,frameH);
 //		Line2D.Float _mean = new Line2D.Float(xMean,0,xMean,frameH);
-		
+		if(locationInHistogram(0)<0)return;
 		Rectangle2D.Float zero = histoBars[locationInHistogram(0)];
 		Rectangle2D.Float _median = histoBars[locationInHistogram(median)];
 		Rectangle2D.Float _mean =  histoBars[locationInHistogram(mean)];
