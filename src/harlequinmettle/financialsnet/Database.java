@@ -67,6 +67,7 @@ public class Database implements Qi, Yi, DBLabels {
 
 	int dataRead = 0;
 	int dataNotRead = 0;
+	  static StatInfo dividendStats;
 
 	static boolean loaded = false;
 
@@ -340,6 +341,25 @@ public class Database implements Qi, Yi, DBLabels {
 		for (int i = 0; i < FIELD_COUNT; i++) {
 			statistics.add(generateStatistics(i));
 		}
+		dividendStats = (doStatsOnDividendSum());
+	}
+
+	private StatInfo doStatsOnDividendSum() {
+	 
+		float[] dividendSums = new float[dbSet.size()];
+		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
+			int i = 0;
+			for (float[] d : ent.getValue()) {
+				//82 is dividends
+				//over reporting because collecting for 2 weeks 
+				dividendSums[i++]+=d[82]/2f;
+			}
+		}
+		ArrayList<Float> dataArray = new ArrayList<Float>( );
+		for(float f: dividendSums){
+			dataArray.add(f);
+		}
+		return new StatInfo(dataArray,true);
 	}
 
 	public StatInfo generateStatistics(int id) {

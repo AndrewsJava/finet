@@ -28,7 +28,7 @@ import javax.swing.JTextArea;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.NameFileComparator;
 
-public class EarningsTest { 
+public class EarningsTest {
 	static ProgramSettings programSettings;
 	static Database db;
 	final String qTickerDownloadSite = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download";
@@ -63,9 +63,12 @@ public class EarningsTest {
 	final CustomButton buttonBrowseDownloadsFiles = JComponentFactory
 			.doPathBrowseButton(PATH_DOWNLOADS);
 
+	final JCheckBox averageDividend = new JCheckBox("use average of dividends");
+
 	final JCheckBox autoLoad = new JCheckBox("automatically load database");
-	
-	final JCheckBox showFFT = new JCheckBox("show fft results technical data",false);
+
+	final JCheckBox showFFT = new JCheckBox("show fft results technical data",
+			false);
 
 	final JLabel daysToDownload = JComponentFactory
 			.doJLabel("number of days to request expected reports: ");
@@ -82,13 +85,13 @@ public class EarningsTest {
 	final FilterPanel filter_one = new FilterPanel();
 	final FilterPanel filter_two = new FilterPanel();
 	final FilterPanel filter_three = new FilterPanel();
-	final FilterPanel[] filters = {filter_one,filter_two,filter_three};
-	
+	final FilterPanel[] filters = { filter_one, filter_two, filter_three };
 
-	Integer[] daysAround = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+	Integer[] daysAround = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+			15, 16, 17, 18, 19, 20 };
 	JComboBox<Integer> daysChoice = new JComboBox<Integer>(daysAround);
-	final JCheckBox useAveraging = new JCheckBox("average price (days)",true);
-	
+	final JCheckBox useAveraging = new JCheckBox("average price (days)", true);
+
 	static EarningsTest singleton;
 
 	public static void main(String[] args) throws Exception {
@@ -115,8 +118,9 @@ public class EarningsTest {
 		application.add(gui);
 		setUpTabs();
 		for (Entry<String, ArrayList<String>> x : EarningsTest.singleton.programSettings.tickersActual
-				.entrySet()){}
-		//	System.out.println(x);
+				.entrySet()) {
+		}
+		// System.out.println(x);
 	}
 
 	private void setUpTabs() {
@@ -139,11 +143,52 @@ public class EarningsTest {
 		addSearchProfilePanel(stepScroll);
 		addFilterPanel(stepScroll);
 		addPorfolioPanel(stepScroll);
+		addStatisticExplorerPanel(stepScroll);
 		return stepScroll;
 	}
 
+	private void addStatisticExplorerPanel(JScrollPanelledPane stepScroll) {
+		JPanel myPanel = JComponentFactory
+				.makePanel(JComponentFactory.HORIZONTAL);
+		final JLabel statSearcher = JComponentFactory
+				.doJLabel("display statistics on field: 	");
+
+		JComboBox<String> fieldsForStats = new JComboBox<String>(
+				DBLabels.labels);
+		myPanel.add(statSearcher);
+		myPanel.add(fieldsForStats);
+		addStatisticsDisplayChoiceListener(fieldsForStats);
+		stepScroll.addComp(myPanel);
+	}
+
+	private void addStatisticsDisplayChoiceListener(
+			final JComboBox<String> fieldsForStats) {
+		fieldsForStats.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				int index = fieldsForStats.getSelectedIndex();
+
+				if (index == 82 && !averageDividend.isSelected()) {
+					Database.dividendStats.setVisible(true);
+					System.out.println(" --- DONT use average --->");
+					System.out.println(" --- index --->"+index);
+					System.out.println(" --- is selected --->"+averageDividend.isSelected());
+				} else {
+					Database.statistics.get(index).setVisible(true);
+					System.out.println(" --- DO use average --->");
+					System.out.println(" --- index --->"+index);
+					System.out.println(" --- is selected --->"+averageDividend.isSelected());
+				}
+			}
+
+		});
+
+	}
+
 	private void addPorfolioPanel(JScrollPanelledPane stepScroll) {
-	JPanel porfolioHistoryPanel = JComponentFactory.makePanel(JComponentFactory.HORIZONTAL);
+		JPanel porfolioHistoryPanel = JComponentFactory
+				.makePanel(JComponentFactory.HORIZONTAL);
 		CustomButton myPorfolio = JComponentFactory.doPorfolioViewButton();
 		CustomButton myHistory = JComponentFactory.doHistoryViewButton();
 		porfolioHistoryPanel.add(myPorfolio);
@@ -152,17 +197,18 @@ public class EarningsTest {
 	}
 
 	private void addFilterPanel(JScrollPanelledPane stepScroll) {
-		for(FilterPanel f: filters)
-		stepScroll.addComp(f);
+		for (FilterPanel f : filters)
+			stepScroll.addComp(f);
 	}
 
 	private void addSearchProfilePanel(JScrollPanelledPane stepScroll) {
 		JPanel textSearch = JComponentFactory
 				.makePanel(JComponentFactory.HORIZONTAL);
- 
+
 		textSearch.add(wordSearch);
 		textSearch.add(wordsForSearch);
 		textSearch.add(submitSearchButton);
+		textSearch.add(averageDividend);
 
 		stepScroll.addComp(textSearch);
 	}
@@ -173,7 +219,7 @@ public class EarningsTest {
 
 		textExplor.add(JComponentFactory
 				.makeTextExplorerLauchButton("Explor Text Stats"));
-		
+
 		textExplor.add(useAveraging);
 		textExplor.add(daysChoice);
 		stepScroll.addComp(textExplor);
@@ -364,8 +410,8 @@ public class EarningsTest {
 				String fromFile = FileUtils.readFileToString(htmlText);
 				getTickersFrom = fromFile.replaceAll("\\s+", "")
 						.split("q\\?s=");
-//				System.out.println("\n" + htmlText.getName() + "      --->"
-//						+ getTickersFrom.length + "     :>");
+				// System.out.println("\n" + htmlText.getName() + "      --->"
+				// + getTickersFrom.length + "     :>");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -375,9 +421,9 @@ public class EarningsTest {
 				String s = getTickersFrom[i];
 				try {
 					if (s.indexOf(">") > 0 && s.indexOf("<") > 0) {
-//						System.out.print(s.substring(s.indexOf(">") + 1,
-//								s.indexOf("<"))
-//								+ "    ");
+						// System.out.print(s.substring(s.indexOf(">") + 1,
+						// s.indexOf("<"))
+						// + "    ");
 					}
 				} catch (Exception e) {
 					// System.err.println("error: "+s);

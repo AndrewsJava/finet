@@ -1,5 +1,7 @@
 package harlequinmettle.financialsnet;
 
+import harlequinmettle.financialsnet.interfaces.DBLabels;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -235,9 +237,10 @@ public class JComponentFactory {
 		a.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				//negative time for most recent listed first
-EarningsTest.programSettings.myHistory.put(-System.currentTimeMillis(), ticker); 
-MemoryManager.saveSettings();
+				// negative time for most recent listed first
+				EarningsTest.programSettings.myHistory.put(
+						-System.currentTimeMillis(), ticker);
+				MemoryManager.saveSettings();
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
 				jf.setExtendedState(jf.getExtendedState()
@@ -326,15 +329,35 @@ MemoryManager.saveSettings();
 			if (!fp.include.isSelected())
 				continue;
 			int id = fp.getId();
+			boolean checkDividendHistory = DBLabels.labels[id]
+					.equals("Dividends");
 			float low = fp.getLow();
 			float high = fp.getHigh();
 			float currentDataPoint = Database.DB_ARRAY.lastEntry().getValue()[Database.dbSet
 					.indexOf(ticker)][id];
+			if (checkDividendHistory) {
+				ArrayList<Float> dividends = new ArrayList<Float>();
+				float sum = 0;
+				for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
+					float possibleDividend = ent.getValue()[Database.dbSet
+							.indexOf(ticker)][id];
+					if (possibleDividend > 0) {
+						dividends.add(possibleDividend);
+						sum += possibleDividend;
+					}
+				}
+				if (sum > 0) {
+					if (EarningsTest.singleton.averageDividend.isSelected())
+						currentDataPoint = sum / dividends.size();
+					else
+						currentDataPoint = sum;
+				}
+			}
 
 			if (currentDataPoint < low || currentDataPoint > high)
 				return false;
-
 		}
+
 		return fits;
 	}
 
@@ -988,9 +1011,9 @@ MemoryManager.saveSettings();
 				searchResultFrame.add(tickerScroll);
 
 				ArrayList<String> bundle = new ArrayList<String>();
-				 for(String ticker :EarningsTest.programSettings.myPortfolio.keySet()){
-				 
-				 
+				for (String ticker : EarningsTest.programSettings.myPortfolio
+						.keySet()) {
+
 					CustomButton tickerButton = JComponentFactory
 							.doIndividualTickerButtonForPanel(bundle, ticker,
 									a.getText(), searchResultFrame,
@@ -1002,7 +1025,8 @@ MemoryManager.saveSettings();
 						tickerScroll.addComp((tickerButton));
 					}
 				}
-				doStatInfoForBundleVsMarket(new ArrayList<String>(EarningsTest.programSettings.myPortfolio.keySet()));
+				doStatInfoForBundleVsMarket(new ArrayList<String>(
+						EarningsTest.programSettings.myPortfolio.keySet()));
 
 			}
 
@@ -1025,9 +1049,9 @@ MemoryManager.saveSettings();
 				searchResultFrame.add(tickerScroll);
 
 				ArrayList<String> bundle = new ArrayList<String>();
-				 for(String ticker :EarningsTest.programSettings.myHistory.values()){
-				 
-				 
+				for (String ticker : EarningsTest.programSettings.myHistory
+						.values()) {
+
 					CustomButton tickerButton = JComponentFactory
 							.doIndividualTickerButtonForPanel(bundle, ticker,
 									a.getText(), searchResultFrame,
@@ -1039,7 +1063,8 @@ MemoryManager.saveSettings();
 						tickerScroll.addComp((tickerButton));
 					}
 				}
-				doStatInfoForBundleVsMarket(new ArrayList<String>(EarningsTest.programSettings.myPortfolio.keySet()));
+				doStatInfoForBundleVsMarket(new ArrayList<String>(
+						EarningsTest.programSettings.myPortfolio.keySet()));
 
 			}
 
