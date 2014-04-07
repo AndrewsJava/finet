@@ -412,9 +412,13 @@ n++;
 			TreeMap<Float, float[]> technicals, int idPt) {
 		TreeMap<Float, Point2D.Float> pricePoints = new TreeMap<Float, Point2D.Float>();
 		for (Entry<Float, float[]> ent : technicals.entrySet()) {
+			try{
 			Point2D.Float priceMatch = new Point2D.Float(ent.getValue()[idPt],
 					Database.SUM_MARKET_PRICE_DATA.get(ent.getKey())[idPt]);
 			pricePoints.put(ent.getKey(), priceMatch);
+		}catch(Exception e){
+			System.out.println("Still getting a null error here");
+		}
 		}
 		return pricePoints;
 	}

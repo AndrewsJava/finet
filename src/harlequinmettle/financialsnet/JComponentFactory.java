@@ -11,8 +11,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -243,6 +246,8 @@ public class JComponentFactory {
 				MemoryManager.saveSettings();
 				final JFrame jf = new JFrame(a.getText());
 				jf.setSize(1300, 650);
+				jf.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			
 				jf.setExtendedState(jf.getExtendedState()
 						| JFrame.MAXIMIZED_BOTH);
 				jf.setVisible(true);
@@ -260,8 +265,15 @@ public class JComponentFactory {
 				// /////////////
 				addTickerMangerPanel(jf, ticker, tickerLocation);
 				// ////////////
-				jf.addComponentListener(JComponentFactory
-						.doWindowRescaleListener(pc));
+				final ComponentListener refForRemoval = JComponentFactory
+						.doWindowRescaleListener(pc);
+				jf.addComponentListener(refForRemoval);
+				jf.addWindowListener(new WindowAdapter(){
+							  @Override 
+					            public void windowClosing(WindowEvent e) { 
+					                 jf.removeComponentListener(refForRemoval);
+							  }
+						});
 				jf.add(JComponentFactory.makeJScrollPane(pc));
 			}
 
