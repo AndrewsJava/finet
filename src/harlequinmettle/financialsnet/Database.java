@@ -67,7 +67,7 @@ public class Database implements Qi, Yi, DBLabels {
 
 	int dataRead = 0;
 	int dataNotRead = 0;
-	  static StatInfo dividendStats;
+	static StatInfo dividendStats;
 
 	static boolean loaded = false;
 
@@ -345,21 +345,35 @@ public class Database implements Qi, Yi, DBLabels {
 	}
 
 	private StatInfo doStatsOnDividendSum() {
-	 
+		TreeMap<String,Float> lastDividends = new TreeMap<String,Float>();
+		for(String ticker: dbSet){
+			lastDividends.put(ticker, 0f);
+		}
 		float[] dividendSums = new float[dbSet.size()];
 		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
 			int i = 0;
 			for (float[] d : ent.getValue()) {
-				//82 is dividends
-				//over reporting because collecting for 2 weeks 
-				dividendSums[i++]+=d[82]/2f;
+				String ticker = dbSet.get(i);
+				// 82 is dividends
+				// over reporting because collecting for 2 weeks
+				float lastDiv =lastDividends.get(ticker); 
+				if (  lastDiv !=  d[82]) { 
+
+					dividendSums[i] += d[82] ;
+					}
+				lastDividends.put(ticker, d[82]);
+				i++;
 			}
 		}
-		ArrayList<Float> dataArray = new ArrayList<Float>( );
-		for(float f: dividendSums){
+		ArrayList<Float> dataArray = new ArrayList<Float>();
+		for (float f : dividendSums) {
 			dataArray.add(f);
 		}
-		return new StatInfo(dataArray,true);
+		for(int i = 0 ; i<dbSet.size(); i++){
+			if(dividendSums[i]>0)
+			System.out.println(dbSet.get(i)+"  dividends: "+dividendSums[i]);
+		}
+		return new StatInfo(dataArray, true);
 	}
 
 	public StatInfo generateStatistics(int id) {

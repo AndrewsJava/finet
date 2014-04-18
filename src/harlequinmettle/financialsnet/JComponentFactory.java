@@ -455,8 +455,8 @@ public class JComponentFactory {
 
 		String[] dates = dateInfo.split(" ");
 		if (dates.length < 2) {
-			System.out.println("\n\nARRAY IS SHORT : " + dateInfo + "  -->  "
-					+ Arrays.toString(dates));
+//			System.out.println("\n\nARRAY IS SHORT : " + dateInfo + "  -->  "
+//					+ Arrays.toString(dates));
 			return;
 		}
 
