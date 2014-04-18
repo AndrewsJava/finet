@@ -348,6 +348,7 @@ public class JComponentFactory {
 			float currentDataPoint = Database.DB_ARRAY.lastEntry().getValue()[Database.dbSet
 					.indexOf(ticker)][id];
 			if (checkDividendHistory) {
+				//DIVIDEND DUPLICATE COUNT NEEDS FIX HERE
 				ArrayList<Float> dividends = new ArrayList<Float>();
 				float sum = 0;
 				for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {

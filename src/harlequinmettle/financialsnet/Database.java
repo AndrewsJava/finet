@@ -74,7 +74,8 @@ public class Database implements Qi, Yi, DBLabels {
 	public static float overallMarketChange;
 	public static final TreeMap<String, Float> INDIVIDUAL_OVERALL_CHANGES = new TreeMap<String, Float>();
 	public static StatInfo changesStats;
-
+//MAP TICKER TO A MAPING OF DAY TO DIVIDEND AMOUNT eg:  <ABC, <15000.0,0.25>>
+	public static final TreeMap<String,  TreeMap<Float, Float>> DIVIDEND_HISTORY = new TreeMap<String,  TreeMap<Float, Float>>();
 	// PARSEING:
 	// LOADING:
 
@@ -354,11 +355,11 @@ public class Database implements Qi, Yi, DBLabels {
 			int i = 0;
 			for (float[] d : ent.getValue()) {
 				String ticker = dbSet.get(i);
-				// 82 is dividends
+				// 82 is dividends 
 				// over reporting because collecting for 2 weeks
 				float lastDiv =lastDividends.get(ticker); 
 				if (  lastDiv !=  d[82]) { 
-
+					DIVIDEND_HISTORY.get(ticker).put(ent.getKey(), d[82]);
 					dividendSums[i] += d[82] ;
 					}
 				lastDividends.put(ticker, d[82]);
@@ -491,12 +492,19 @@ public class Database implements Qi, Yi, DBLabels {
 			convertFileDataToArray(i, root);
 
 		}
-
+addMapToDividendDataForEachTicker();
 		DataUtil.loadStringData(EarningsTest.REPORTS_ROOT
 				+ "NASDAQ_PROFILES_I.txt", DESCRIPTIONS);
 		DataUtil.loadStringData(EarningsTest.REPORTS_ROOT
 				+ "NYSE_PROFILES_I.txt", DESCRIPTIONS);
 		calculateWordStatistics(DESCRIPTIONS, WORD_STATS);
+	}
+
+	private void addMapToDividendDataForEachTicker() {
+	for(String s: dbSet){
+		DIVIDEND_HISTORY.put(s, new TreeMap<Float,Float>());
+	}
+		
 	}
 
 	private void calculateWordStatistics(TreeMap<String, String> descriptions2,
