@@ -348,23 +348,7 @@ public class JComponentFactory {
 			float currentDataPoint = Database.DB_ARRAY.lastEntry().getValue()[Database.dbSet
 					.indexOf(ticker)][id];
 			if (checkDividendHistory) {
-				//DIVIDEND DUPLICATE COUNT NEEDS FIX HERE
-				ArrayList<Float> dividends = new ArrayList<Float>();
-				float sum = 0;
-				for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
-					float possibleDividend = ent.getValue()[Database.dbSet
-							.indexOf(ticker)][id];
-					if (possibleDividend > 0) {
-						dividends.add(possibleDividend);
-						sum += possibleDividend;
-					}
-				}
-				if (sum > 0) {
-					if (EarningsTest.singleton.averageDividend.isSelected())
-						currentDataPoint = sum / dividends.size();
-					else
-						currentDataPoint = sum;
-				}
+currentDataPoint = calculateDividend(ticker);
 			}
 
 			if (currentDataPoint < low || currentDataPoint > high)
@@ -372,6 +356,47 @@ public class JComponentFactory {
 		}
 
 		return fits;
+	}
+
+	private static float calculateDividend(String ticker) {
+		//DIVIDEND DUPLICATE COUNT NEEDS FIX HERE
+		ArrayList<Float> dividends = new ArrayList<Float>();
+		float sum = 0;
+		float dividend = 0;
+		int dividendId = 82;
+		for (Entry<Float,Float> ent : Database.DIVIDEND_HISTORY.get(ticker).entrySet()) {
+	 sum+=ent.getValue();
+		}
+		if (sum > 0) {
+			if (EarningsTest.singleton.averageDividend.isSelected())
+				dividend = sum / dividends.size();
+			else
+				dividend = sum;
+		}
+		return dividend;
+	}
+
+	private static float calculateDividendPre(String ticker) {
+		//DIVIDEND DUPLICATE COUNT NEEDS FIX HERE
+		ArrayList<Float> dividends = new ArrayList<Float>();
+		float sum = 0;
+		float dividend = 0;
+		int dividendId = 82;
+		for (Entry<Float, float[][]> ent : Database.DB_ARRAY.entrySet()) {
+			float possibleDividend = ent.getValue()[Database.dbSet
+					.indexOf(ticker)][dividendId];
+			if (possibleDividend > 0) {
+				dividends.add(possibleDividend);
+				sum += possibleDividend;
+			}
+		}
+		if (sum > 0) {
+			if (EarningsTest.singleton.averageDividend.isSelected())
+				dividend = sum / dividends.size();
+			else
+				dividend = sum;
+		}
+		return dividend;
 	}
 
 	private static void addButtonDetails(CustomButton a, double marketCap,
