@@ -264,7 +264,7 @@ public class JComponentFactory {
 						tickerLocation, jf.getWidth(), jf.getHeight());
 				// /////////////
 				addTickerMangerPanel(jf, ticker, tickerLocation);
-				// ////////////
+				// ////////////MEMORYLEAKFIX
 				final ComponentListener refForRemoval = JComponentFactory
 						.doWindowRescaleListener(pc);
 				jf.addComponentListener(refForRemoval);

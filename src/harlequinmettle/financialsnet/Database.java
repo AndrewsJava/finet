@@ -22,9 +22,7 @@ import javax.swing.JTextField;
 public class Database implements Qi, Yi, DBLabels {
 	// public static final String ROOT = "sm/q";
 	// public static final String OBJ_ROOT = "sm/OBJECTS";
-	public static final int FIELD_COUNT = DBLabels.labels.length;
-	public static final JTextField[] LOWS = new JTextField[FIELD_COUNT];
-	public static final JTextField[] HIGHS = new JTextField[FIELD_COUNT];
+	public static final int FIELD_COUNT = DBLabels.labels.length; 
 	public static final TreeMap<Float, float[][]> DB_ARRAY = new TreeMap<Float, float[][]>();
 	public static final TreeMap<Float, float[][]> DB_SUP = new TreeMap<Float, float[][]>();
 
